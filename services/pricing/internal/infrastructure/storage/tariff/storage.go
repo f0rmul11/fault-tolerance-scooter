@@ -3,13 +3,14 @@ package tariff
 import (
 	"context"
 	"errors"
+
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
+
 	"pricing/internal/dto/tariff"
 	"pricing/internal/infrastructure/storage/tariff/dao"
 	app "pricing/internal/pkg/pricingerror"
 	"pricing/internal/pkg/transaction/wrapper"
-
-	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5"
 )
 
 type Storage struct {
@@ -19,6 +20,7 @@ type Storage struct {
 func New(db wrapper.Database) *Storage {
 	return &Storage{db: db}
 }
+
 func (s *Storage) Get(ctx context.Context, plan string) (tariff.Tariff, error) {
 	const query = `
 	select *
@@ -26,7 +28,13 @@ func (s *Storage) Get(ctx context.Context, plan string) (tariff.Tariff, error) {
 	where plan = $1
 	`
 	var row dao.Tariff
-	if err := pgxscan.Get(ctx, s.db.Pool(ctx), &row, query, plan); err != nil {
+	if err := pgxscan.Get(
+		ctx,
+		s.db.Pool(ctx),
+		&row,
+		query,
+		plan,
+	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return tariff.Tariff{}, app.NewNotFoundErr("Тариф не найден", err)
 		}
@@ -34,6 +42,7 @@ func (s *Storage) Get(ctx context.Context, plan string) (tariff.Tariff, error) {
 	}
 	return row.ConvertTo(), nil
 }
+
 func (s *Storage) List(ctx context.Context) ([]tariff.Tariff, error) {
 	const query = `
 	select *

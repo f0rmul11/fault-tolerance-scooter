@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc"
 
 	"rental/config"
+	"rental/internal/application/service"
 	"rental/internal/application/usecase"
 	"rental/internal/infrastructure/gateway"
 	"rental/internal/infrastructure/messagebus"
@@ -38,6 +39,7 @@ type App struct {
 
 	pool       *pgxpool.Pool
 	storage    *storage.Registry
+	services   *service.Registry
 	usecases   *usecase.Registry
 	mainServer *server.Server
 
@@ -147,6 +149,7 @@ func (a *App) init(ctx context.Context) error {
 		a.initGateway,
 		a.initMessageBus,
 		a.initOutbox,
+		a.initServices,
 		a.initUsecases,
 		a.initControllers,
 	}

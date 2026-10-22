@@ -1,11 +1,11 @@
 package storage
 
 import (
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"pricing/internal/infrastructure/storage/pricing"
 	"pricing/internal/infrastructure/storage/tariff"
 	"pricing/internal/pkg/transaction/wrapper"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Registry struct {

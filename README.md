@@ -71,7 +71,7 @@ Pricing получает события асинхронно, фиксирует
 аванс и рассчитывает полную стоимость по начатым минутам. Деньги — копейки RUB.
 Это учебный финансовый учёт без списаний с реальных банковских карт.
 
-Структура владельца: `internal/domain/entity`, `application/usecase`,
+Структура владельца: `internal/domain/entity`, `application/usecase`, `application/service`,
 `infrastructure/storage/<entity>/dao`, `infrastructure/gateway`, `app`,
 `events` (у издателя), `pkg`; ручная сборка в `internal/init.go` и registry.
 Шлюз содержит только транспорт и generated gRPC-клиенты.

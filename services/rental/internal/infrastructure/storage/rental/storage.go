@@ -3,15 +3,16 @@ package rental
 import (
 	"context"
 	"errors"
-	"rental/internal/domain/entity"
-	"rental/internal/infrastructure/storage/rental/dao"
-	app "rental/internal/pkg/rentalerror"
-	"rental/internal/pkg/transaction/wrapper"
 	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v5"
+
+	"rental/internal/domain/entity"
+	"rental/internal/infrastructure/storage/rental/dao"
+	app "rental/internal/pkg/rentalerror"
+	"rental/internal/pkg/transaction/wrapper"
 )
 
 type Storage struct {
@@ -21,6 +22,7 @@ type Storage struct {
 func New(db wrapper.Database) *Storage {
 	return &Storage{db: db}
 }
+
 func (s *Storage) Get(ctx context.Context, id uuid.UUID) (*entity.Rental, error) {
 	const query = `
 	select *
@@ -28,7 +30,13 @@ func (s *Storage) Get(ctx context.Context, id uuid.UUID) (*entity.Rental, error)
 	where id = $1
 	`
 	var row dao.Rental
-	if err := pgxscan.Get(ctx, s.db.Pool(ctx), &row, query, id); err != nil {
+	if err := pgxscan.Get(
+		ctx,
+		s.db.Pool(ctx),
+		&row,
+		query,
+		id,
+	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, app.NewNotFoundErr("Запись не найдена", err)
 		}
@@ -36,6 +44,7 @@ func (s *Storage) Get(ctx context.Context, id uuid.UUID) (*entity.Rental, error)
 	}
 	return row.ConvertTo(), nil
 }
+
 func (s *Storage) FindKey(ctx context.Context, userID, key uuid.UUID) (*entity.Rental, error) {
 	const query = `
 	select *
@@ -44,7 +53,14 @@ func (s *Storage) FindKey(ctx context.Context, userID, key uuid.UUID) (*entity.R
 		and idempotency_key = $2
 	`
 	var row dao.Rental
-	if err := pgxscan.Get(ctx, s.db.Pool(ctx), &row, query, userID, key); err != nil {
+	if err := pgxscan.Get(
+		ctx,
+		s.db.Pool(ctx),
+		&row,
+		query,
+		userID,
+		key,
+	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
@@ -52,6 +68,7 @@ func (s *Storage) FindKey(ctx context.Context, userID, key uuid.UUID) (*entity.R
 	}
 	return row.ConvertTo(), nil
 }
+
 func (s *Storage) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*entity.Rental, error) {
 	const query = `
 	select *
@@ -62,7 +79,15 @@ func (s *Storage) List(ctx context.Context, userID uuid.UUID, limit, offset int)
 	offset $3
 	`
 	var rows []dao.Rental
-	if err := pgxscan.Select(ctx, s.db.Pool(ctx), &rows, query, userID, limit, offset); err != nil {
+	if err := pgxscan.Select(
+		ctx,
+		s.db.Pool(ctx),
+		&rows,
+		query,
+		userID,
+		limit,
+		offset,
+	); err != nil {
 		return nil, err
 	}
 	result := make([]*entity.Rental, 0, len(rows))
@@ -71,6 +96,7 @@ func (s *Storage) List(ctx context.Context, userID uuid.UUID, limit, offset int)
 	}
 	return result, nil
 }
+
 func (s *Storage) Create(ctx context.Context, object *entity.Rental) error {
 	const query = `
 	insert into public.rentals (
@@ -104,7 +130,9 @@ func (s *Storage) Create(ctx context.Context, object *entity.Rental) error {
 	)
 	on conflict do nothing
 	`
-	tag, err := s.db.Pool(ctx).Exec(ctx, query,
+	tag, err := s.db.Pool(ctx).Exec(
+		ctx,
+		query,
 		object.ID(),
 		object.UserID(),
 		object.ScooterID(),
@@ -127,38 +155,39 @@ func (s *Storage) Create(ctx context.Context, object *entity.Rental) error {
 	}
 	return nil
 }
+
 func (s *Storage) Save(ctx context.Context, objects ...*entity.Rental) error {
 	if len(objects) == 0 {
 		return nil
 	}
-	ID := make([]uuid.UUID, 0, len(objects))
-	UserID := make([]uuid.UUID, 0, len(objects))
-	ScooterID := make([]uuid.UUID, 0, len(objects))
-	IdempotencyKey := make([]uuid.UUID, 0, len(objects))
-	RequestID := make([]uuid.UUID, 0, len(objects))
-	ScooterNumber := make([]string, 0, len(objects))
-	ScooterBrand := make([]string, 0, len(objects))
-	Status := make([]string, 0, len(objects))
-	ReservedAt := make([]time.Time, 0, len(objects))
-	StartedAt := make([]time.Time, 0, len(objects))
-	FinishedAt := make([]time.Time, 0, len(objects))
-	UpdatedAt := make([]time.Time, 0, len(objects))
-	Version := make([]int, 0, len(objects))
+	ids := make([]uuid.UUID, 0, len(objects))
+	userIDs := make([]uuid.UUID, 0, len(objects))
+	scooterIDs := make([]uuid.UUID, 0, len(objects))
+	idempotencyKeys := make([]uuid.UUID, 0, len(objects))
+	requestIDs := make([]uuid.UUID, 0, len(objects))
+	scooterNumbers := make([]string, 0, len(objects))
+	scooterBrands := make([]string, 0, len(objects))
+	statuses := make([]string, 0, len(objects))
+	reservedAt := make([]time.Time, 0, len(objects))
+	startedAt := make([]time.Time, 0, len(objects))
+	finishedAt := make([]time.Time, 0, len(objects))
+	updatedAt := make([]time.Time, 0, len(objects))
+	versions := make([]int, 0, len(objects))
 	oldVersions := make([]int, 0, len(objects))
 	for _, object := range objects {
-		ID = append(ID, object.ID())
-		UserID = append(UserID, object.UserID())
-		ScooterID = append(ScooterID, object.ScooterID())
-		IdempotencyKey = append(IdempotencyKey, object.IdempotencyKey())
-		RequestID = append(RequestID, object.RequestID())
-		ScooterNumber = append(ScooterNumber, object.ScooterNumber())
-		ScooterBrand = append(ScooterBrand, object.ScooterBrand())
-		Status = append(Status, string(object.Status()))
-		ReservedAt = append(ReservedAt, object.ReservedAt())
-		StartedAt = append(StartedAt, object.StartedAt())
-		FinishedAt = append(FinishedAt, object.FinishedAt())
-		UpdatedAt = append(UpdatedAt, object.UpdatedAt())
-		Version = append(Version, object.Version())
+		ids = append(ids, object.ID())
+		userIDs = append(userIDs, object.UserID())
+		scooterIDs = append(scooterIDs, object.ScooterID())
+		idempotencyKeys = append(idempotencyKeys, object.IdempotencyKey())
+		requestIDs = append(requestIDs, object.RequestID())
+		scooterNumbers = append(scooterNumbers, object.ScooterNumber())
+		scooterBrands = append(scooterBrands, object.ScooterBrand())
+		statuses = append(statuses, string(object.Status()))
+		reservedAt = append(reservedAt, object.ReservedAt())
+		startedAt = append(startedAt, object.StartedAt())
+		finishedAt = append(finishedAt, object.FinishedAt())
+		updatedAt = append(updatedAt, object.UpdatedAt())
+		versions = append(versions, object.Version())
 		oldVersions = append(oldVersions, object.OldVersion())
 	}
 	const query = `
@@ -195,8 +224,23 @@ func (s *Storage) Save(ctx context.Context, objects ...*entity.Rental) error {
 	where target.id = v.id
 		and target.version = v.old_version
 	`
-	tag, err := s.db.Pool(ctx).Exec(ctx, query,
-		ID, UserID, ScooterID, IdempotencyKey, RequestID, ScooterNumber, ScooterBrand, Status, ReservedAt, StartedAt, FinishedAt, UpdatedAt, Version, oldVersions,
+	tag, err := s.db.Pool(ctx).Exec(
+		ctx,
+		query,
+		ids,
+		userIDs,
+		scooterIDs,
+		idempotencyKeys,
+		requestIDs,
+		scooterNumbers,
+		scooterBrands,
+		statuses,
+		reservedAt,
+		startedAt,
+		finishedAt,
+		updatedAt,
+		versions,
+		oldVersions,
 	)
 	if err != nil {
 		return err

@@ -3,13 +3,14 @@ package reserve
 import (
 	"context"
 	"errors"
-	"pricing/internal/domain/entity"
-	"pricing/internal/dto/tariff"
-	app "pricing/internal/pkg/pricingerror"
 	"testing"
 	"time"
 
 	"github.com/gofrs/uuid"
+
+	"pricing/internal/domain/entity"
+	"pricing/internal/dto/tariff"
+	app "pricing/internal/pkg/pricingerror"
 )
 
 type storeFake struct {
@@ -23,6 +24,7 @@ func (s *storeFake) Get(context.Context, uuid.UUID) (*entity.Trip, error) {
 	}
 	return s.saved, nil
 }
+
 func (s *storeFake) Create(_ context.Context, trip *entity.Trip) error {
 	s.created = trip
 	return nil
@@ -48,6 +50,7 @@ func (tariffFake) Get(_ context.Context, plan string) (tariff.Tariff, error) {
 		AdvanceMinor: 3000,
 	}, nil
 }
+
 func TestSnapshotAndReplay(t *testing.T) {
 	input := Input{
 		RentalID:      uuid.Must(uuid.NewV4()),
@@ -72,6 +75,7 @@ func TestSnapshotAndReplay(t *testing.T) {
 		t.Fatalf("replay replaced snapshot: %v", err)
 	}
 }
+
 func TestProfileFailureDoesNotFallbackToBase(t *testing.T) {
 	input := Input{
 		RentalID:      uuid.Must(uuid.NewV4()),

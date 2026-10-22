@@ -2,42 +2,50 @@ package reserve
 
 import (
 	"context"
-	"log/slog"
-	"rental/internal/domain/entity"
-	scooterdto "rental/internal/dto/scooter"
-	"rental/internal/events/rental_reserved"
-	"rental/internal/pkg/event"
-	app "rental/internal/pkg/rentalerror"
-	"rental/internal/pkg/transaction"
 	"time"
 
 	"github.com/gofrs/uuid"
+
+	"rental/internal/domain/entity"
+	scooterdto "rental/internal/dto/scooter"
+	"rental/internal/pkg/event"
+	app "rental/internal/pkg/rentalerror"
 )
 
 type Storage interface {
 	FindKey(context.Context, uuid.UUID, uuid.UUID) (*entity.Rental, error)
-	Create(context.Context, *entity.Rental) error
 }
+
+type Reservation interface {
+	Reserve(context.Context, *entity.Rental) error
+}
+
 type Scooter interface {
 	Get(context.Context, uuid.UUID) (scooterdto.Scooter, error)
 }
+
 type UseCase struct {
-	storage Storage
-	scooter Scooter
-	flusher event.Flusher
+	storage     Storage
+	reservation Reservation
+	scooter     Scooter
+	flusher     event.Flusher
 }
 
-func New(storage Storage, scooter Scooter, flusher event.Flusher) *UseCase {
+func New(storage Storage, reservation Reservation, scooter Scooter, flusher event.Flusher) *UseCase {
 	return &UseCase{
-		storage: storage,
-		scooter: scooter,
-		flusher: flusher,
+		storage:     storage,
+		reservation: reservation,
+		scooter:     scooter,
+		flusher:     flusher,
 	}
 }
+
+// Execute возвращает сохранённый повтор до любых обращений к каталогу.
 func (s *UseCase) Execute(ctx context.Context, input Input) (*entity.Rental, error) {
 	if input.UserID == uuid.Nil || input.ScooterID == uuid.Nil || input.IdempotencyKey == uuid.Nil || input.RequestID == uuid.Nil {
 		return nil, app.NewInvalidArgumentErr("Идентификаторы запроса должны быть UUID")
 	}
+
 	saved, err := s.storage.FindKey(ctx, input.UserID, input.IdempotencyKey)
 	if err != nil {
 		return nil, err
@@ -48,6 +56,8 @@ func (s *UseCase) Execute(ctx context.Context, input Input) (*entity.Rental, err
 		}
 		return saved, nil
 	}
+
+	// Каталог нужен только для новой брони, после проверки идемпотентности.
 	scooter, err := s.scooter.Get(ctx, input.ScooterID)
 	if err != nil {
 		return nil, err
@@ -59,28 +69,26 @@ func (s *UseCase) Execute(ctx context.Context, input Input) (*entity.Rental, err
 	if err != nil {
 		return nil, err
 	}
-	rental, err := entity.NewRental(id, input.UserID, input.ScooterID, input.IdempotencyKey, input.RequestID,
-		scooter.Number, scooter.Brand, scooter.ChargePercent, time.Now())
-	if err != nil {
-		return nil, err
-	}
-	buffer := event.New(s.flusher)
-	buffer.Add(rental_reserved.New(rental))
-	err = transaction.Exec(ctx, func(txCtx context.Context) error {
-		if err := s.storage.Create(txCtx, rental); err != nil {
-			return err
-		}
-		return buffer.Flush(txCtx)
-	})
-	if err != nil {
-		return nil, err
-	}
-	slog.InfoContext(ctx, "Аренда сохранена",
-		"operation", "reserve_rental",
-		"rental_id", rental.ID().String(),
-		"request_id", rental.RequestID().String(),
-		"status", rental.Status(),
-		"version", rental.Version(),
+
+	// Домен проверяет условия бронирования и формирует событие в контексте операции.
+	_, ctx = event.WithContext(ctx, s.flusher)
+	rental, err := entity.NewRental(
+		ctx,
+		id,
+		input.UserID,
+		input.ScooterID,
+		input.IdempotencyKey,
+		input.RequestID,
+		scooter.Number,
+		scooter.Brand,
+		scooter.IsActive,
+		time.Now(),
 	)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.reservation.Reserve(ctx, rental); err != nil {
+		return nil, err
+	}
 	return rental, nil
 }

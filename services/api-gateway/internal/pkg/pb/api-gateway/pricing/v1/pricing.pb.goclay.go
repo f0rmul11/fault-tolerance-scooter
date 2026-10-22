@@ -5,7 +5,6 @@ package pricingV1
 import (
 	context "context"
 	_ "embed"
-
 	runtime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	transport "github.com/not-for-prod/clay/transport"
 	httptransport "github.com/not-for-prod/clay/transport/httptransport"

@@ -33,9 +33,9 @@ func (c *Client) Get(ctx context.Context, id uuid.UUID) (scooterdto.Scooter, err
 		return scooterdto.Scooter{}, intercept.FromRPC(err, trailers)
 	}
 	return scooterdto.Scooter{
-		ID:            uuid.FromStringOrNil(response.GetScooter().GetId()),
-		Number:        response.GetScooter().GetNumber(),
-		Brand:         response.GetScooter().GetBrand(),
-		ChargePercent: int(response.GetScooter().GetChargePercent()),
+		ID:       uuid.FromStringOrNil(response.GetScooter().GetId()),
+		Number:   response.GetScooter().GetNumber(),
+		Brand:    response.GetScooter().GetBrand(),
+		IsActive: response.GetScooter().GetIsActive(),
 	}, nil
 }

@@ -9,7 +9,16 @@ import (
 )
 
 func TestBillingRoundsStartedMinutesAndSettlesAdvance(t *testing.T) {
-	at := time.Date(2026, 10, 22, 10, 0, 0, 0, time.UTC)
+	at := time.Date(
+		2026,
+		10,
+		22,
+		10,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
 	for _, test := range []struct {
 		name     string
 		duration time.Duration
@@ -42,7 +51,16 @@ func TestBillingRoundsStartedMinutesAndSettlesAdvance(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			trip := With(uuid.Must(uuid.NewV4()), WithStatus(Active), WithStartedAt(at), WithRateMinor(700), WithAdvanceMinor(3000), WithChargedMinor(3000), WithRentalVersion(2), WithVersion(2))
+			trip := With(
+				uuid.Must(uuid.NewV4()),
+				WithStatus(Active),
+				WithStartedAt(at),
+				WithRateMinor(700),
+				WithAdvanceMinor(3000),
+				WithChargedMinor(3000),
+				WithRentalVersion(2),
+				WithVersion(2),
+			)
 			if err := trip.Complete(3, at, at.Add(test.duration)); err != nil {
 				t.Fatal(err)
 			}
@@ -53,9 +71,19 @@ func TestBillingRoundsStartedMinutesAndSettlesAdvance(t *testing.T) {
 		})
 	}
 }
+
 func TestEventOrderAndDuplicates(t *testing.T) {
 	userID, scooterID := uuid.Must(uuid.NewV4()), uuid.Must(uuid.NewV4())
-	trip := With(uuid.Must(uuid.NewV4()), WithUserID(userID), WithScooterID(scooterID), WithRentalVersion(1), WithVersion(1), WithStatus(Reserved), WithAdvanceMinor(5000), WithReservedAt(time.Now()))
+	trip := With(
+		uuid.Must(uuid.NewV4()),
+		WithUserID(userID),
+		WithScooterID(scooterID),
+		WithRentalVersion(1),
+		WithVersion(1),
+		WithStatus(Reserved),
+		WithAdvanceMinor(5000),
+		WithReservedAt(time.Now()),
+	)
 	apply, err := trip.CheckEvent(userID, scooterID, 3)
 	if err == nil || apply {
 		t.Fatal("out-of-order completion was accepted")
@@ -72,6 +100,7 @@ func TestEventOrderAndDuplicates(t *testing.T) {
 		t.Fatal("duplicate start charged advance again")
 	}
 }
+
 func TestInvalidBillingDoesNotMutateTrip(t *testing.T) {
 	at := time.Now()
 	for _, test := range []struct {
@@ -96,7 +125,16 @@ func TestInvalidBillingDoesNotMutateTrip(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			trip := With(uuid.Must(uuid.NewV4()), WithStatus(Active), WithStartedAt(at), WithRateMinor(test.rate), WithAdvanceMinor(5000), WithChargedMinor(5000), WithRentalVersion(2), WithVersion(2))
+			trip := With(
+				uuid.Must(uuid.NewV4()),
+				WithStatus(Active),
+				WithStartedAt(at),
+				WithRateMinor(test.rate),
+				WithAdvanceMinor(5000),
+				WithChargedMinor(5000),
+				WithRentalVersion(2),
+				WithVersion(2),
+			)
 			if err := trip.Complete(3, at, test.end); err == nil {
 				t.Fatal("invalid settlement accepted")
 			}
@@ -106,8 +144,15 @@ func TestInvalidBillingDoesNotMutateTrip(t *testing.T) {
 		})
 	}
 }
+
 func TestCancelReservationDoesNotCharge(t *testing.T) {
-	trip := With(uuid.Must(uuid.NewV4()), WithStatus(Reserved), WithAdvanceMinor(5000), WithRentalVersion(1), WithVersion(1))
+	trip := With(
+		uuid.Must(uuid.NewV4()),
+		WithStatus(Reserved),
+		WithAdvanceMinor(5000),
+		WithRentalVersion(1),
+		WithVersion(1),
+	)
 	if err := trip.Cancel(2); err != nil || trip.ChargedMinor() != 0 || trip.Status() != Canceled {
 		t.Fatalf("cancel: %v", err)
 	}

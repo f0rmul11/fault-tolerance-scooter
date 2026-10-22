@@ -13,7 +13,8 @@ type Scooter struct {
 	ID            uuid.UUID      `db:"id"`
 	Number        sql.NullString `db:"number"`
 	Brand         sql.NullString `db:"brand"`
-	ChargePercent sql.NullInt64  `db:"charge_percent"`
+	IsActive      sql.NullBool   `db:"is_active"`
+	Owner         sql.NullString `db:"owner"`
 	RiddenSeconds sql.NullInt64  `db:"ridden_seconds"`
 	Version       sql.NullInt64  `db:"version"`
 	UpdatedAt     time.Time      `db:"updated_at"`

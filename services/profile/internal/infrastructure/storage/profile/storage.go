@@ -3,15 +3,16 @@ package profile
 import (
 	"context"
 	"errors"
-	"profile/internal/domain/entity"
-	"profile/internal/infrastructure/storage/profile/dao"
-	app "profile/internal/pkg/profileerror"
-	"profile/internal/pkg/transaction/wrapper"
 	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v5"
+
+	"profile/internal/domain/entity"
+	"profile/internal/infrastructure/storage/profile/dao"
+	app "profile/internal/pkg/profileerror"
+	"profile/internal/pkg/transaction/wrapper"
 )
 
 type Storage struct {
@@ -21,6 +22,7 @@ type Storage struct {
 func New(db wrapper.Database) *Storage {
 	return &Storage{db: db}
 }
+
 func (s *Storage) Get(ctx context.Context, id uuid.UUID) (*entity.User, error) {
 	const query = `
 	select u.*, s.plan
@@ -29,7 +31,13 @@ func (s *Storage) Get(ctx context.Context, id uuid.UUID) (*entity.User, error) {
 	where u.id = $1
 	`
 	var row dao.User
-	if err := pgxscan.Get(ctx, s.db.Pool(ctx), &row, query, id); err != nil {
+	if err := pgxscan.Get(
+		ctx,
+		s.db.Pool(ctx),
+		&row,
+		query,
+		id,
+	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, app.NewNotFoundErr("Запись не найдена", err)
 		}
@@ -37,6 +45,7 @@ func (s *Storage) Get(ctx context.Context, id uuid.UUID) (*entity.User, error) {
 	}
 	return row.ConvertTo(), nil
 }
+
 func (s *Storage) List(ctx context.Context, limit, offset int) ([]*entity.User, error) {
 	const query = `
 	select u.*, s.plan
@@ -47,7 +56,14 @@ func (s *Storage) List(ctx context.Context, limit, offset int) ([]*entity.User, 
 	offset $2
 	`
 	var rows []dao.User
-	if err := pgxscan.Select(ctx, s.db.Pool(ctx), &rows, query, limit, offset); err != nil {
+	if err := pgxscan.Select(
+		ctx,
+		s.db.Pool(ctx),
+		&rows,
+		query,
+		limit,
+		offset,
+	); err != nil {
 		return nil, err
 	}
 	result := make([]*entity.User, 0, len(rows))
@@ -56,25 +72,26 @@ func (s *Storage) List(ctx context.Context, limit, offset int) ([]*entity.User, 
 	}
 	return result, nil
 }
+
 func (s *Storage) Save(ctx context.Context, objects ...*entity.User) error {
 	if len(objects) == 0 {
 		return nil
 	}
-	IDs := make([]uuid.UUID, 0, len(objects))
-	Name := make([]string, 0, len(objects))
-	Email := make([]string, 0, len(objects))
-	Version := make([]int, 0, len(objects))
-	OldVersion := make([]int, 0, len(objects))
-	UpdatedAt := make([]time.Time, 0, len(objects))
-	Plan := make([]string, 0, len(objects))
+	ids := make([]uuid.UUID, 0, len(objects))
+	names := make([]string, 0, len(objects))
+	emails := make([]string, 0, len(objects))
+	versions := make([]int, 0, len(objects))
+	oldVersions := make([]int, 0, len(objects))
+	expectedVersions := make([]int, 0, len(objects))
+	updatedAt := make([]time.Time, 0, len(objects))
 	for _, object := range objects {
-		IDs = append(IDs, object.ID())
-		Name = append(Name, object.Name())
-		Email = append(Email, object.Email())
-		Version = append(Version, object.Version())
-		OldVersion = append(OldVersion, object.OldVersion())
-		UpdatedAt = append(UpdatedAt, object.UpdatedAt())
-		Plan = append(Plan, string(object.Plan()))
+		ids = append(ids, object.ID())
+		names = append(names, object.Name())
+		emails = append(emails, object.Email())
+		versions = append(versions, object.Version())
+		oldVersions = append(oldVersions, object.OldVersion())
+		expectedVersions = append(expectedVersions, object.ExpectedVersion())
+		updatedAt = append(updatedAt, object.UpdatedAt())
 	}
 	const query = `
 	update public.users as target
@@ -89,19 +106,47 @@ func (s *Storage) Save(ctx context.Context, objects ...*entity.User) error {
 		$3::text[],
 		$4::bigint[],
 		$5::bigint[],
-		$6::timestamptz[]
-	) as v(id, name, email, version, old_version, updated_at)
+		$6::timestamptz[],
+		$7::bigint[]
+	) as v(id, name, email, version, old_version, updated_at, expected_version)
 	where target.id = v.id
 		and target.version = v.old_version
+		and target.version = v.expected_version
 	`
-	tag, err := s.db.Pool(ctx).Exec(ctx, query, IDs, Name, Email, Version, OldVersion, UpdatedAt)
+	tag, err := s.db.Pool(ctx).Exec(
+		ctx,
+		query,
+		ids,
+		names,
+		emails,
+		versions,
+		oldVersions,
+		updatedAt,
+		expectedVersions,
+	)
 	if err != nil {
 		return err
 	}
 	if tag.RowsAffected() != int64(len(objects)) {
 		return app.NewConflictErr("Данные изменились; перечитайте запись")
 	}
-	const subscriptions = `
+	return nil
+}
+
+// SaveSubscriptions сохраняет подписки после успешного CAS профилей в той же транзакции.
+func (s *Storage) SaveSubscriptions(ctx context.Context, objects ...*entity.User) error {
+	if len(objects) == 0 {
+		return nil
+	}
+	ids := make([]uuid.UUID, 0, len(objects))
+	plans := make([]string, 0, len(objects))
+	updatedAt := make([]time.Time, 0, len(objects))
+	for _, object := range objects {
+		ids = append(ids, object.ID())
+		plans = append(plans, string(object.Plan()))
+		updatedAt = append(updatedAt, object.UpdatedAt())
+	}
+	const query = `
 	update public.subscriptions as target
 	set
 		plan = v.plan,
@@ -113,7 +158,13 @@ func (s *Storage) Save(ctx context.Context, objects ...*entity.User) error {
 	) as v(user_id, plan, updated_at)
 	where target.user_id = v.user_id
 	`
-	tag, err = s.db.Pool(ctx).Exec(ctx, subscriptions, IDs, Plan, UpdatedAt)
+	tag, err := s.db.Pool(ctx).Exec(
+		ctx,
+		query,
+		ids,
+		plans,
+		updatedAt,
+	)
 	if err != nil {
 		return err
 	}

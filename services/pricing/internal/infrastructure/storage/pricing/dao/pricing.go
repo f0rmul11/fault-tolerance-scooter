@@ -10,7 +10,8 @@ type Trip struct {
 }
 
 func (row Trip) ConvertTo() *entity.Trip {
-	return entity.With(row.RentalID,
+	return entity.With(
+		row.RentalID,
 		entity.WithUserID(row.UserID.UUID),
 		entity.WithScooterID(row.ScooterID.UUID),
 		entity.WithPlan(row.Plan.String),

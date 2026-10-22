@@ -2,6 +2,7 @@ package dao
 
 import (
 	"database/sql"
+
 	"profile/internal/domain/entity"
 	"profile/internal/pkg/xo"
 )
@@ -12,7 +13,8 @@ type User struct {
 }
 
 func (row User) ConvertTo() *entity.User {
-	return entity.With(row.ID,
+	return entity.With(
+		row.ID,
 		entity.WithName(row.Name.String),
 		entity.WithEmail(row.Email.String),
 		entity.WithUpdatedAt(row.UpdatedAt),

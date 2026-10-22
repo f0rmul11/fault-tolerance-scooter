@@ -12,8 +12,11 @@ service ScooterService {
   // Читает страницу справочника.
   rpc ListScooters(ListScootersRequest) returns (ListScootersResponse);
 
-  // Атомарно обновляет переданные поля с проверкой версии.
-  rpc UpdateScooter(UpdateScooterRequest) returns (UpdateScooterResponse);
+  // Обновляет доступность для новых бронирований с проверкой версии.
+  rpc UpdateScooterAvailability(UpdateScooterAvailabilityRequest) returns (UpdateScooterAvailabilityResponse);
+
+  // Обновляет название владельца — юридического лица с проверкой версии.
+  rpc UpdateScooterOwner(UpdateScooterOwnerRequest) returns (UpdateScooterOwnerResponse);
 }
 
 // Scooter: транспортное представление данных.
@@ -27,9 +30,6 @@ message Scooter {
   // Марка самоката.
   string brand = 3;
 
-  // Заряд аккумулятора от 0 до 100 процентов.
-  int32 charge_percent = 4;
-
   // Общий наезд в секундах; часы = секунды / 3600.
   int64 ridden_seconds = 5;
 
@@ -38,6 +38,12 @@ message Scooter {
 
   // Время обновления, RFC3339 UTC.
   string updated_at = 7;
+
+  // Разрешены ли новые бронирования; занятость проверяет Rental.
+  bool is_active = 8;
+
+  // Название владельца — юридического лица.
+  string owner = 9;
 }
 
 // GetScooterRequest: параметры запроса.
@@ -67,29 +73,38 @@ message ListScootersResponse {
   repeated Scooter scooters = 1;
 }
 
-// UpdateScooterRequest: параметры запроса.
-message UpdateScooterRequest {
-  // UUID изменяемой записи.
+// UpdateScooterAvailabilityRequest: параметры точечного обновления.
+message UpdateScooterAvailabilityRequest {
+  // UUID самоката.
   string scooter_id = 1;
 
-  // Обязательная версия, прочитанная перед обновлением.
+  // Версия, прочитанная перед обновлением.
   int64 expected_version = 2;
 
-  // Новый номер; отсутствует — не менять.
-  optional string number = 3;
-
-  // Новая марка; отсутствует — не менять.
-  optional string brand = 4;
-
-  // Новый заряд 0–100%; отсутствие отличается от нуля.
-  optional int32 charge_percent = 5;
-
-  // Обновлённый наезд в секундах; уменьшение запрещено.
-  optional int64 ridden_seconds = 6;
+  // Обязательный флаг; false явно запрещает новые бронирования.
+  optional bool is_active = 3;
 }
 
-// UpdateScooterResponse: результат операции.
-message UpdateScooterResponse {
-  // Карточка после сохранения.
+// UpdateScooterAvailabilityResponse: карточка после сохранения.
+message UpdateScooterAvailabilityResponse {
+  // Сохранённый самокат.
+  Scooter scooter = 1;
+}
+
+// UpdateScooterOwnerRequest: параметры точечного обновления.
+message UpdateScooterOwnerRequest {
+  // UUID самоката.
+  string scooter_id = 1;
+
+  // Версия, прочитанная перед обновлением.
+  int64 expected_version = 2;
+
+  // Непустое название юридического лица, до 200 символов.
+  string owner = 3;
+}
+
+// UpdateScooterOwnerResponse: карточка после сохранения.
+message UpdateScooterOwnerResponse {
+  // Сохранённый самокат.
   Scooter scooter = 1;
 }

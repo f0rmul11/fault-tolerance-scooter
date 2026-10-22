@@ -109,9 +109,9 @@ func local_request_ScooterService_ListScooters_0(ctx context.Context, marshaler 
 	return msg, metadata, err
 }
 
-func request_ScooterService_UpdateScooter_0(ctx context.Context, marshaler runtime.Marshaler, client ScooterServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_ScooterService_UpdateScooterAvailability_0(ctx context.Context, marshaler runtime.Marshaler, client ScooterServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq UpdateScooterRequest
+		protoReq UpdateScooterAvailabilityRequest
 		metadata runtime.ServerMetadata
 		err      error
 	)
@@ -129,13 +129,13 @@ func request_ScooterService_UpdateScooter_0(ctx context.Context, marshaler runti
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scooter_id", err)
 	}
-	msg, err := client.UpdateScooter(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.UpdateScooterAvailability(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
 
-func local_request_ScooterService_UpdateScooter_0(ctx context.Context, marshaler runtime.Marshaler, server ScooterServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_ScooterService_UpdateScooterAvailability_0(ctx context.Context, marshaler runtime.Marshaler, server ScooterServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq UpdateScooterRequest
+		protoReq UpdateScooterAvailabilityRequest
 		metadata runtime.ServerMetadata
 		err      error
 	)
@@ -150,7 +150,52 @@ func local_request_ScooterService_UpdateScooter_0(ctx context.Context, marshaler
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scooter_id", err)
 	}
-	msg, err := server.UpdateScooter(ctx, &protoReq)
+	msg, err := server.UpdateScooterAvailability(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_ScooterService_UpdateScooterOwner_0(ctx context.Context, marshaler runtime.Marshaler, client ScooterServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq UpdateScooterOwnerRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["scooter_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scooter_id")
+	}
+	protoReq.ScooterId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scooter_id", err)
+	}
+	msg, err := client.UpdateScooterOwner(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_ScooterService_UpdateScooterOwner_0(ctx context.Context, marshaler runtime.Marshaler, server ScooterServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq UpdateScooterOwnerRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["scooter_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scooter_id")
+	}
+	protoReq.ScooterId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scooter_id", err)
+	}
+	msg, err := server.UpdateScooterOwner(ctx, &protoReq)
 	return msg, metadata, err
 }
 
@@ -200,25 +245,45 @@ func RegisterScooterServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		}
 		forward_ScooterService_ListScooters_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPatch, pattern_ScooterService_UpdateScooter_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPatch, pattern_ScooterService_UpdateScooterAvailability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/api_gateway.scooter.v1.ScooterService/UpdateScooter", runtime.WithHTTPPathPattern("/v1/scooters/{scooter_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/api_gateway.scooter.v1.ScooterService/UpdateScooterAvailability", runtime.WithHTTPPathPattern("/v1/scooters/{scooter_id}/availability"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ScooterService_UpdateScooter_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ScooterService_UpdateScooterAvailability_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_ScooterService_UpdateScooter_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ScooterService_UpdateScooterAvailability_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPatch, pattern_ScooterService_UpdateScooterOwner_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/api_gateway.scooter.v1.ScooterService/UpdateScooterOwner", runtime.WithHTTPPathPattern("/v1/scooters/{scooter_id}/owner"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_ScooterService_UpdateScooterOwner_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_ScooterService_UpdateScooterOwner_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
 	return nil
@@ -294,34 +359,53 @@ func RegisterScooterServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		}
 		forward_ScooterService_ListScooters_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPatch, pattern_ScooterService_UpdateScooter_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPatch, pattern_ScooterService_UpdateScooterAvailability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/api_gateway.scooter.v1.ScooterService/UpdateScooter", runtime.WithHTTPPathPattern("/v1/scooters/{scooter_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/api_gateway.scooter.v1.ScooterService/UpdateScooterAvailability", runtime.WithHTTPPathPattern("/v1/scooters/{scooter_id}/availability"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ScooterService_UpdateScooter_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ScooterService_UpdateScooterAvailability_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_ScooterService_UpdateScooter_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ScooterService_UpdateScooterAvailability_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPatch, pattern_ScooterService_UpdateScooterOwner_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/api_gateway.scooter.v1.ScooterService/UpdateScooterOwner", runtime.WithHTTPPathPattern("/v1/scooters/{scooter_id}/owner"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ScooterService_UpdateScooterOwner_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_ScooterService_UpdateScooterOwner_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 	return nil
 }
 
 var (
-	pattern_ScooterService_GetScooter_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "scooters", "scooter_id"}, ""))
-	pattern_ScooterService_ListScooters_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "scooters"}, ""))
-	pattern_ScooterService_UpdateScooter_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "scooters", "scooter_id"}, ""))
+	pattern_ScooterService_GetScooter_0                = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "scooters", "scooter_id"}, ""))
+	pattern_ScooterService_ListScooters_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "scooters"}, ""))
+	pattern_ScooterService_UpdateScooterAvailability_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "scooters", "scooter_id", "availability"}, ""))
+	pattern_ScooterService_UpdateScooterOwner_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "scooters", "scooter_id", "owner"}, ""))
 )
 
 var (
-	forward_ScooterService_GetScooter_0    = runtime.ForwardResponseMessage
-	forward_ScooterService_ListScooters_0  = runtime.ForwardResponseMessage
-	forward_ScooterService_UpdateScooter_0 = runtime.ForwardResponseMessage
+	forward_ScooterService_GetScooter_0                = runtime.ForwardResponseMessage
+	forward_ScooterService_ListScooters_0              = runtime.ForwardResponseMessage
+	forward_ScooterService_UpdateScooterAvailability_0 = runtime.ForwardResponseMessage
+	forward_ScooterService_UpdateScooterOwner_0        = runtime.ForwardResponseMessage
 )

@@ -87,15 +87,17 @@
         "tags": [
           "ScooterService"
         ]
-      },
+      }
+    },
+    "/v1/scooters/{scooterId}/availability": {
       "patch": {
-        "summary": "Атомарно обновляет переданные поля с проверкой версии.",
-        "operationId": "ScooterService_UpdateScooter",
+        "summary": "Обновляет доступность для новых бронирований с проверкой версии.",
+        "operationId": "ScooterService_UpdateScooterAvailability",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/api_gateway.scooter.v1.UpdateScooterResponse"
+              "$ref": "#/definitions/api_gateway.scooter.v1.UpdateScooterAvailabilityResponse"
             }
           },
           "default": {
@@ -108,7 +110,7 @@
         "parameters": [
           {
             "name": "scooterId",
-            "description": "UUID изменяемой записи.",
+            "description": "UUID самоката.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -118,7 +120,47 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/api_gateway.scooter.v1.ScooterService.UpdateScooterBody"
+              "$ref": "#/definitions/api_gateway.scooter.v1.ScooterService.UpdateScooterAvailabilityBody"
+            }
+          }
+        ],
+        "tags": [
+          "ScooterService"
+        ]
+      }
+    },
+    "/v1/scooters/{scooterId}/owner": {
+      "patch": {
+        "summary": "Обновляет название владельца — юридического лица с проверкой версии.",
+        "operationId": "ScooterService_UpdateScooterOwner",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.scooter.v1.UpdateScooterOwnerResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "scooterId",
+            "description": "UUID самоката.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api_gateway.scooter.v1.ScooterService.UpdateScooterOwnerBody"
             }
           }
         ],
@@ -168,11 +210,6 @@
           "type": "string",
           "description": "Марка самоката."
         },
-        "chargePercent": {
-          "type": "integer",
-          "format": "int32",
-          "description": "Заряд аккумулятора от 0 до 100 процентов."
-        },
         "riddenSeconds": {
           "type": "string",
           "format": "int64",
@@ -186,48 +223,67 @@
         "updatedAt": {
           "type": "string",
           "description": "Время обновления, RFC3339 UTC."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Разрешены ли новые бронирования; занятость проверяет Rental."
+        },
+        "owner": {
+          "type": "string",
+          "description": "Название владельца — юридического лица."
         }
       },
       "description": "Scooter: транспортное представление данных."
     },
-    "api_gateway.scooter.v1.ScooterService.UpdateScooterBody": {
+    "api_gateway.scooter.v1.ScooterService.UpdateScooterAvailabilityBody": {
       "type": "object",
       "properties": {
         "expectedVersion": {
           "type": "string",
           "format": "int64",
-          "description": "Обязательная версия, прочитанная перед обновлением."
+          "description": "Версия, прочитанная перед обновлением."
         },
-        "number": {
-          "type": "string",
-          "description": "Новый номер; отсутствует — не менять."
-        },
-        "brand": {
-          "type": "string",
-          "description": "Новая марка; отсутствует — не менять."
-        },
-        "chargePercent": {
-          "type": "integer",
-          "format": "int32",
-          "description": "Новый заряд 0–100%; отсутствие отличается от нуля."
-        },
-        "riddenSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Обновлённый наезд в секундах; уменьшение запрещено."
+        "isActive": {
+          "type": "boolean",
+          "description": "Обязательный флаг; false явно запрещает новые бронирования."
         }
       },
-      "description": "UpdateScooterRequest: параметры запроса."
+      "description": "UpdateScooterAvailabilityRequest: параметры точечного обновления."
     },
-    "api_gateway.scooter.v1.UpdateScooterResponse": {
+    "api_gateway.scooter.v1.ScooterService.UpdateScooterOwnerBody": {
+      "type": "object",
+      "properties": {
+        "expectedVersion": {
+          "type": "string",
+          "format": "int64",
+          "description": "Версия, прочитанная перед обновлением."
+        },
+        "owner": {
+          "type": "string",
+          "description": "Непустое название юридического лица, до 200 символов."
+        }
+      },
+      "description": "UpdateScooterOwnerRequest: параметры точечного обновления."
+    },
+    "api_gateway.scooter.v1.UpdateScooterAvailabilityResponse": {
       "type": "object",
       "properties": {
         "scooter": {
           "$ref": "#/definitions/api_gateway.scooter.v1.Scooter",
-          "description": "Карточка после сохранения."
+          "description": "Сохранённый самокат."
         }
       },
-      "description": "UpdateScooterResponse: результат операции."
+      "description": "UpdateScooterAvailabilityResponse: карточка после сохранения."
+    },
+    "api_gateway.scooter.v1.UpdateScooterOwnerResponse": {
+      "type": "object",
+      "properties": {
+        "scooter": {
+          "$ref": "#/definitions/api_gateway.scooter.v1.Scooter",
+          "description": "Сохранённый самокат."
+        }
+      },
+      "description": "UpdateScooterOwnerResponse: карточка после сохранения."
     },
     "google.protobuf.Any": {
       "type": "object",

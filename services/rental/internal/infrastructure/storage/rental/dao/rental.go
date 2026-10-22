@@ -10,7 +10,8 @@ type Rental struct {
 }
 
 func (row Rental) ConvertTo() *entity.Rental {
-	return entity.With(row.ID,
+	return entity.With(
+		row.ID,
 		entity.WithUserID(row.UserID.UUID),
 		entity.WithScooterID(row.ScooterID.UUID),
 		entity.WithIdempotencyKey(row.IdempotencyKey.UUID),

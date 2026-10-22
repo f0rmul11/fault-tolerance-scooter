@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"rental/internal/application/service"
 	"rental/internal/application/usecase/rental/cancel"
 	"rental/internal/application/usecase/rental/finish"
 	"rental/internal/application/usecase/rental/get"
@@ -21,13 +22,18 @@ type Registry struct {
 	ListRentals   *list.UseCase
 }
 
-func NewRegistry(storage *storage.Registry, gateway *gateway.Registry, flusher event.Flusher) *Registry {
+func NewRegistry(storage *storage.Registry, services *service.Registry, gateways *gateway.Registry, flusher event.Flusher) *Registry {
 	return &Registry{
-		ReserveRental: reserve.New(storage.Rentals, gateway.Scooter, flusher),
-		StartRental:   start.New(storage.Rentals, flusher),
-		FinishRental:  finish.New(storage.Rentals, flusher),
-		CancelRental:  cancel.New(storage.Rentals, flusher),
-		GetRental:     get.New(storage.Rentals),
-		ListRentals:   list.New(storage.Rentals),
+		ReserveRental: reserve.New(
+			storage.Rentals,
+			services.ReserveRental,
+			gateways.Scooter,
+			flusher,
+		),
+		StartRental:  start.New(storage.Rentals, services.StartRental, flusher),
+		FinishRental: finish.New(storage.Rentals, services.FinishRental, flusher),
+		CancelRental: cancel.New(storage.Rentals, services.CancelRental, flusher),
+		GetRental:    get.New(storage.Rentals),
+		ListRentals:  list.New(storage.Rentals),
 	}
 }

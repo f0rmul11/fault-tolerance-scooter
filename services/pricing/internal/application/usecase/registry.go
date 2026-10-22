@@ -20,9 +20,13 @@ type Registry struct {
 	ListTariffs  *list.UseCase
 }
 
-func NewRegistry(storage *storage.Registry, gateway *gateway.Registry) *Registry {
+func NewRegistry(storage *storage.Registry, gateways *gateway.Registry) *Registry {
 	return &Registry{
-		ReserveTrip:  reserve.New(storage.Trips, gateway.Profile, storage.Tariffs),
+		ReserveTrip: reserve.New(
+			storage.Trips,
+			gateways.Profile,
+			storage.Tariffs,
+		),
 		StartTrip:    start.New(storage.Trips),
 		CompleteTrip: complete.New(storage.Trips),
 		CancelTrip:   cancel.New(storage.Trips),

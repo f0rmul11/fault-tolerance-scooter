@@ -1,10 +1,10 @@
 package update
 
 import (
-	"profile/internal/domain/entity"
-
 	"github.com/gofrs/uuid"
 	"github.com/samber/mo"
+
+	"profile/internal/domain/entity"
 )
 
 type Input struct {

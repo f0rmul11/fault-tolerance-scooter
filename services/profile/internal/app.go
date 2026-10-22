@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc"
 
 	"profile/config"
+	"profile/internal/application/service"
 	"profile/internal/application/usecase"
 	"profile/internal/infrastructure/storage"
 	"profile/internal/pkg/closer"
@@ -29,6 +30,7 @@ import (
 type App struct {
 	pool       *pgxpool.Pool
 	storage    *storage.Registry
+	services   *service.Registry
 	usecases   *usecase.Registry
 	mainServer *server.Server
 
@@ -130,6 +132,7 @@ func (a *App) init(ctx context.Context) error {
 		a.initGrpcConn,
 		a.initPostgres,
 		a.initStorage,
+		a.initServices,
 		a.initUsecases,
 		a.initControllers,
 	}

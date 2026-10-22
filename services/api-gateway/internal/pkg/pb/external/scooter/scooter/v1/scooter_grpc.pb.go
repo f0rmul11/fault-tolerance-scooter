@@ -8,7 +8,6 @@ package scooterV1
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ScooterService_GetScooter_FullMethodName    = "/scooter.scooter.v1.ScooterService/GetScooter"
-	ScooterService_ListScooters_FullMethodName  = "/scooter.scooter.v1.ScooterService/ListScooters"
-	ScooterService_UpdateScooter_FullMethodName = "/scooter.scooter.v1.ScooterService/UpdateScooter"
+	ScooterService_GetScooter_FullMethodName                = "/scooter.scooter.v1.ScooterService/GetScooter"
+	ScooterService_ListScooters_FullMethodName              = "/scooter.scooter.v1.ScooterService/ListScooters"
+	ScooterService_UpdateScooterAvailability_FullMethodName = "/scooter.scooter.v1.ScooterService/UpdateScooterAvailability"
+	ScooterService_UpdateScooterOwner_FullMethodName        = "/scooter.scooter.v1.ScooterService/UpdateScooterOwner"
 )
 
 // ScooterServiceClient is the client API for ScooterService service.
@@ -35,8 +35,10 @@ type ScooterServiceClient interface {
 	GetScooter(ctx context.Context, in *GetScooterRequest, opts ...grpc.CallOption) (*GetScooterResponse, error)
 	// Читает страницу справочника.
 	ListScooters(ctx context.Context, in *ListScootersRequest, opts ...grpc.CallOption) (*ListScootersResponse, error)
-	// Атомарно обновляет переданные поля с проверкой версии.
-	UpdateScooter(ctx context.Context, in *UpdateScooterRequest, opts ...grpc.CallOption) (*UpdateScooterResponse, error)
+	// Обновляет доступность для новых бронирований с проверкой версии.
+	UpdateScooterAvailability(ctx context.Context, in *UpdateScooterAvailabilityRequest, opts ...grpc.CallOption) (*UpdateScooterAvailabilityResponse, error)
+	// Обновляет название владельца — юридического лица с проверкой версии.
+	UpdateScooterOwner(ctx context.Context, in *UpdateScooterOwnerRequest, opts ...grpc.CallOption) (*UpdateScooterOwnerResponse, error)
 }
 
 type scooterServiceClient struct {
@@ -67,10 +69,20 @@ func (c *scooterServiceClient) ListScooters(ctx context.Context, in *ListScooter
 	return out, nil
 }
 
-func (c *scooterServiceClient) UpdateScooter(ctx context.Context, in *UpdateScooterRequest, opts ...grpc.CallOption) (*UpdateScooterResponse, error) {
+func (c *scooterServiceClient) UpdateScooterAvailability(ctx context.Context, in *UpdateScooterAvailabilityRequest, opts ...grpc.CallOption) (*UpdateScooterAvailabilityResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpdateScooterResponse)
-	err := c.cc.Invoke(ctx, ScooterService_UpdateScooter_FullMethodName, in, out, cOpts...)
+	out := new(UpdateScooterAvailabilityResponse)
+	err := c.cc.Invoke(ctx, ScooterService_UpdateScooterAvailability_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *scooterServiceClient) UpdateScooterOwner(ctx context.Context, in *UpdateScooterOwnerRequest, opts ...grpc.CallOption) (*UpdateScooterOwnerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateScooterOwnerResponse)
+	err := c.cc.Invoke(ctx, ScooterService_UpdateScooterOwner_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +99,10 @@ type ScooterServiceServer interface {
 	GetScooter(context.Context, *GetScooterRequest) (*GetScooterResponse, error)
 	// Читает страницу справочника.
 	ListScooters(context.Context, *ListScootersRequest) (*ListScootersResponse, error)
-	// Атомарно обновляет переданные поля с проверкой версии.
-	UpdateScooter(context.Context, *UpdateScooterRequest) (*UpdateScooterResponse, error)
+	// Обновляет доступность для новых бронирований с проверкой версии.
+	UpdateScooterAvailability(context.Context, *UpdateScooterAvailabilityRequest) (*UpdateScooterAvailabilityResponse, error)
+	// Обновляет название владельца — юридического лица с проверкой версии.
+	UpdateScooterOwner(context.Context, *UpdateScooterOwnerRequest) (*UpdateScooterOwnerResponse, error)
 	mustEmbedUnimplementedScooterServiceServer()
 }
 
@@ -105,8 +119,11 @@ func (UnimplementedScooterServiceServer) GetScooter(context.Context, *GetScooter
 func (UnimplementedScooterServiceServer) ListScooters(context.Context, *ListScootersRequest) (*ListScootersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListScooters not implemented")
 }
-func (UnimplementedScooterServiceServer) UpdateScooter(context.Context, *UpdateScooterRequest) (*UpdateScooterResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateScooter not implemented")
+func (UnimplementedScooterServiceServer) UpdateScooterAvailability(context.Context, *UpdateScooterAvailabilityRequest) (*UpdateScooterAvailabilityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateScooterAvailability not implemented")
+}
+func (UnimplementedScooterServiceServer) UpdateScooterOwner(context.Context, *UpdateScooterOwnerRequest) (*UpdateScooterOwnerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateScooterOwner not implemented")
 }
 func (UnimplementedScooterServiceServer) mustEmbedUnimplementedScooterServiceServer() {}
 func (UnimplementedScooterServiceServer) testEmbeddedByValue()                        {}
@@ -165,20 +182,38 @@ func _ScooterService_ListScooters_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ScooterService_UpdateScooter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateScooterRequest)
+func _ScooterService_UpdateScooterAvailability_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateScooterAvailabilityRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ScooterServiceServer).UpdateScooter(ctx, in)
+		return srv.(ScooterServiceServer).UpdateScooterAvailability(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ScooterService_UpdateScooter_FullMethodName,
+		FullMethod: ScooterService_UpdateScooterAvailability_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ScooterServiceServer).UpdateScooter(ctx, req.(*UpdateScooterRequest))
+		return srv.(ScooterServiceServer).UpdateScooterAvailability(ctx, req.(*UpdateScooterAvailabilityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ScooterService_UpdateScooterOwner_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateScooterOwnerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ScooterServiceServer).UpdateScooterOwner(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ScooterService_UpdateScooterOwner_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ScooterServiceServer).UpdateScooterOwner(ctx, req.(*UpdateScooterOwnerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -199,8 +234,12 @@ var ScooterService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ScooterService_ListScooters_Handler,
 		},
 		{
-			MethodName: "UpdateScooter",
-			Handler:    _ScooterService_UpdateScooter_Handler,
+			MethodName: "UpdateScooterAvailability",
+			Handler:    _ScooterService_UpdateScooterAvailability_Handler,
+		},
+		{
+			MethodName: "UpdateScooterOwner",
+			Handler:    _ScooterService_UpdateScooterOwner_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

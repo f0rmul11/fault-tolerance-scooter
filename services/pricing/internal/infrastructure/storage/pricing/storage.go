@@ -3,15 +3,16 @@ package pricing
 import (
 	"context"
 	"errors"
-	"pricing/internal/domain/entity"
-	"pricing/internal/infrastructure/storage/pricing/dao"
-	app "pricing/internal/pkg/pricingerror"
-	"pricing/internal/pkg/transaction/wrapper"
 	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v5"
+
+	"pricing/internal/domain/entity"
+	"pricing/internal/infrastructure/storage/pricing/dao"
+	app "pricing/internal/pkg/pricingerror"
+	"pricing/internal/pkg/transaction/wrapper"
 )
 
 type Storage struct {
@@ -21,6 +22,7 @@ type Storage struct {
 func New(db wrapper.Database) *Storage {
 	return &Storage{db: db}
 }
+
 func (s *Storage) Get(ctx context.Context, id uuid.UUID) (*entity.Trip, error) {
 	const query = `
 	select *
@@ -28,7 +30,13 @@ func (s *Storage) Get(ctx context.Context, id uuid.UUID) (*entity.Trip, error) {
 	where rental_id = $1
 	`
 	var row dao.Trip
-	if err := pgxscan.Get(ctx, s.db.Pool(ctx), &row, query, id); err != nil {
+	if err := pgxscan.Get(
+		ctx,
+		s.db.Pool(ctx),
+		&row,
+		query,
+		id,
+	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, app.NewNotFoundErr("Запись не найдена", err)
 		}
@@ -36,6 +44,7 @@ func (s *Storage) Get(ctx context.Context, id uuid.UUID) (*entity.Trip, error) {
 	}
 	return row.ConvertTo(), nil
 }
+
 func (s *Storage) Create(ctx context.Context, object *entity.Trip) error {
 	const query = `
 	insert into public.trips (
@@ -75,7 +84,9 @@ func (s *Storage) Create(ctx context.Context, object *entity.Trip) error {
 	)
 	on conflict do nothing
 	`
-	tag, err := s.db.Pool(ctx).Exec(ctx, query,
+	tag, err := s.db.Pool(ctx).Exec(
+		ctx,
+		query,
 		object.RentalID(),
 		object.UserID(),
 		object.ScooterID(),
@@ -101,44 +112,45 @@ func (s *Storage) Create(ctx context.Context, object *entity.Trip) error {
 	}
 	return nil
 }
+
 func (s *Storage) Save(ctx context.Context, objects ...*entity.Trip) error {
 	if len(objects) == 0 {
 		return nil
 	}
-	RentalID := make([]uuid.UUID, 0, len(objects))
-	UserID := make([]uuid.UUID, 0, len(objects))
-	ScooterID := make([]uuid.UUID, 0, len(objects))
-	Plan := make([]string, 0, len(objects))
-	RateMinor := make([]int64, 0, len(objects))
-	AdvanceMinor := make([]int64, 0, len(objects))
-	ChargedMinor := make([]int64, 0, len(objects))
-	TotalMinor := make([]int64, 0, len(objects))
-	AdjustmentMinor := make([]int64, 0, len(objects))
-	BilledMinutes := make([]int64, 0, len(objects))
-	Status := make([]string, 0, len(objects))
-	RentalVersion := make([]int, 0, len(objects))
-	ReservedAt := make([]time.Time, 0, len(objects))
-	StartedAt := make([]time.Time, 0, len(objects))
-	FinishedAt := make([]time.Time, 0, len(objects))
-	Version := make([]int, 0, len(objects))
+	rentalIDs := make([]uuid.UUID, 0, len(objects))
+	userIDs := make([]uuid.UUID, 0, len(objects))
+	scooterIDs := make([]uuid.UUID, 0, len(objects))
+	plans := make([]string, 0, len(objects))
+	rateMinor := make([]int64, 0, len(objects))
+	advanceMinor := make([]int64, 0, len(objects))
+	chargedMinor := make([]int64, 0, len(objects))
+	totalMinor := make([]int64, 0, len(objects))
+	adjustmentMinor := make([]int64, 0, len(objects))
+	billedMinutes := make([]int64, 0, len(objects))
+	statuses := make([]string, 0, len(objects))
+	rentalVersions := make([]int, 0, len(objects))
+	reservedAt := make([]time.Time, 0, len(objects))
+	startedAt := make([]time.Time, 0, len(objects))
+	finishedAt := make([]time.Time, 0, len(objects))
+	versions := make([]int, 0, len(objects))
 	oldVersions := make([]int, 0, len(objects))
 	for _, object := range objects {
-		RentalID = append(RentalID, object.RentalID())
-		UserID = append(UserID, object.UserID())
-		ScooterID = append(ScooterID, object.ScooterID())
-		Plan = append(Plan, object.Plan())
-		RateMinor = append(RateMinor, object.RateMinor())
-		AdvanceMinor = append(AdvanceMinor, object.AdvanceMinor())
-		ChargedMinor = append(ChargedMinor, object.ChargedMinor())
-		TotalMinor = append(TotalMinor, object.TotalMinor())
-		AdjustmentMinor = append(AdjustmentMinor, object.AdjustmentMinor())
-		BilledMinutes = append(BilledMinutes, object.BilledMinutes())
-		Status = append(Status, string(object.Status()))
-		RentalVersion = append(RentalVersion, object.RentalVersion())
-		ReservedAt = append(ReservedAt, object.ReservedAt())
-		StartedAt = append(StartedAt, object.StartedAt())
-		FinishedAt = append(FinishedAt, object.FinishedAt())
-		Version = append(Version, object.Version())
+		rentalIDs = append(rentalIDs, object.RentalID())
+		userIDs = append(userIDs, object.UserID())
+		scooterIDs = append(scooterIDs, object.ScooterID())
+		plans = append(plans, object.Plan())
+		rateMinor = append(rateMinor, object.RateMinor())
+		advanceMinor = append(advanceMinor, object.AdvanceMinor())
+		chargedMinor = append(chargedMinor, object.ChargedMinor())
+		totalMinor = append(totalMinor, object.TotalMinor())
+		adjustmentMinor = append(adjustmentMinor, object.AdjustmentMinor())
+		billedMinutes = append(billedMinutes, object.BilledMinutes())
+		statuses = append(statuses, string(object.Status()))
+		rentalVersions = append(rentalVersions, object.RentalVersion())
+		reservedAt = append(reservedAt, object.ReservedAt())
+		startedAt = append(startedAt, object.StartedAt())
+		finishedAt = append(finishedAt, object.FinishedAt())
+		versions = append(versions, object.Version())
 		oldVersions = append(oldVersions, object.OldVersion())
 	}
 	const query = `
@@ -181,8 +193,26 @@ func (s *Storage) Save(ctx context.Context, objects ...*entity.Trip) error {
 	where target.rental_id = v.rental_id
 		and target.version = v.old_version
 	`
-	tag, err := s.db.Pool(ctx).Exec(ctx, query,
-		RentalID, UserID, ScooterID, Plan, RateMinor, AdvanceMinor, ChargedMinor, TotalMinor, AdjustmentMinor, BilledMinutes, Status, RentalVersion, ReservedAt, StartedAt, FinishedAt, Version, oldVersions,
+	tag, err := s.db.Pool(ctx).Exec(
+		ctx,
+		query,
+		rentalIDs,
+		userIDs,
+		scooterIDs,
+		plans,
+		rateMinor,
+		advanceMinor,
+		chargedMinor,
+		totalMinor,
+		adjustmentMinor,
+		billedMinutes,
+		statuses,
+		rentalVersions,
+		reservedAt,
+		startedAt,
+		finishedAt,
+		versions,
+		oldVersions,
 	)
 	if err != nil {
 		return err

@@ -22,6 +22,7 @@ import (
 	"rental/config"
 	"rental/internal/app/echo/v1"
 	rentalapp "rental/internal/app/rental/v1"
+	"rental/internal/application/service"
 	"rental/internal/application/usecase"
 	"rental/internal/infrastructure/gateway"
 	"rental/internal/infrastructure/messagebus"
@@ -240,7 +241,7 @@ func (a *App) initStorage(context.Context) error {
 }
 
 func (a *App) initUsecases(context.Context) error {
-	a.usecases = usecase.NewRegistry(a.storage, a.gateway, a.outbox)
+	a.usecases = usecase.NewRegistry(a.storage, a.services, a.gateway, a.outbox)
 	return nil
 }
 
@@ -248,6 +249,7 @@ func (a *App) initGateway(context.Context) error {
 	a.gateway = gateway.NewRegistry(a.grpcConn)
 	return nil
 }
+
 func (a *App) initMessageBus(context.Context) error {
 	a.messageBus = messagebus.NewRegistry()
 	return nil
@@ -271,5 +273,10 @@ func (a *App) initOutbox(ctx context.Context) error {
 	)
 	// Stop workers before global closers release the producer and database.
 	a.publicCloser.Add(a.messageRelay.Stop)
+	return nil
+}
+
+func (a *App) initServices(context.Context) error {
+	a.services = service.NewRegistry(a.storage)
 	return nil
 }

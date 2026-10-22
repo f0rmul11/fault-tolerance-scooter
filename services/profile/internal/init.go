@@ -22,6 +22,7 @@ import (
 	"profile/config"
 	"profile/internal/app/echo/v1"
 	profileapp "profile/internal/app/profile/v1"
+	"profile/internal/application/service"
 	"profile/internal/application/usecase"
 	"profile/internal/infrastructure/storage"
 	"profile/internal/pkg/closer"
@@ -235,6 +236,11 @@ func (a *App) initStorage(context.Context) error {
 }
 
 func (a *App) initUsecases(context.Context) error {
-	a.usecases = usecase.NewRegistry(a.storage)
+	a.usecases = usecase.NewRegistry(a.storage, a.services)
+	return nil
+}
+
+func (a *App) initServices(context.Context) error {
+	a.services = service.NewRegistry(a.storage)
 	return nil
 }

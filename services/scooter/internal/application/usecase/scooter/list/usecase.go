@@ -2,6 +2,7 @@ package list
 
 import (
 	"context"
+
 	"scooter/internal/domain/entity"
 	app "scooter/internal/pkg/scootererror"
 )
@@ -9,6 +10,7 @@ import (
 type Storage interface {
 	List(context.Context, int, int) ([]*entity.Scooter, error)
 }
+
 type UseCase struct {
 	storage Storage
 }
@@ -16,6 +18,7 @@ type UseCase struct {
 func New(storage Storage) *UseCase {
 	return &UseCase{storage: storage}
 }
+
 func (s *UseCase) Execute(ctx context.Context, input Input) ([]*entity.Scooter, error) {
 	if input.Limit == 0 {
 		input.Limit = 20

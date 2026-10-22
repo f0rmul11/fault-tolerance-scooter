@@ -10,7 +10,8 @@ HTTP-шлюз: `http://localhost:18080`. Swagger: `/docs/`, схема: `/swagge
 | PATCH | `/v1/profiles/{user_id}` | `profile.profile.v1.ProfileService/UpdateProfile` |
 | GET | `/v1/scooters/{scooter_id}` | `scooter.scooter.v1.ScooterService/GetScooter` |
 | GET | `/v1/scooters` | `scooter.scooter.v1.ScooterService/ListScooters` |
-| PATCH | `/v1/scooters/{scooter_id}` | `scooter.scooter.v1.ScooterService/UpdateScooter` |
+| PATCH | `/v1/scooters/{scooter_id}/availability` | `scooter.scooter.v1.ScooterService/UpdateScooterAvailability` |
+| PATCH | `/v1/scooters/{scooter_id}/owner` | `scooter.scooter.v1.ScooterService/UpdateScooterOwner` |
 | POST | `/v1/rentals` | `rental.rental.v1.RentalService/ReserveRental` |
 | GET | `/v1/rentals/{rental_id}` | `rental.rental.v1.RentalService/GetRental` |
 | POST | `/v1/rentals/{rental_id}:start` | `rental.rental.v1.RentalService/StartRental` |
@@ -24,7 +25,9 @@ HTTP-шлюз: `http://localhost:18080`. Swagger: `/docs/`, схема: `/swagge
 возвращается десятичными строками по protobuf JSON mapping. Profile использует enum
 `SUBSCRIPTION_PLAN_BASE`, `SUBSCRIPTION_PLAN_PREMIUM`, `SUBSCRIPTION_PLAN_ULTRA`.
 Для обновления профиля/самоката обязательна `expected_version`. Optional поля
-не передавайте, если значение не меняется; `charge_percent: 0` обнуляет заряд.
+не передавайте, если значение не меняется. У Scooter две отдельные ручки: availability
+требует явный boolean is_active (включая false), owner — непустое название юрлица
+до 200 символов. Обе требуют expected_version. Заряд и общий UpdateScooter удалены.
 
 Request ID берётся из `x-request-id` либо создаётся шлюзом и возвращается в ответе.
 Во внутренние изменяющие RPC Rental он передаётся полем `request_id`. Это не ключ

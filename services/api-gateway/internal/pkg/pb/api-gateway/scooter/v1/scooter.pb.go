@@ -7,13 +7,12 @@
 package scooterV1
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
-
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -32,14 +31,16 @@ type Scooter struct {
 	Number string `protobuf:"bytes,2,opt,name=number,proto3" json:"number,omitempty"`
 	// Марка самоката.
 	Brand string `protobuf:"bytes,3,opt,name=brand,proto3" json:"brand,omitempty"`
-	// Заряд аккумулятора от 0 до 100 процентов.
-	ChargePercent int32 `protobuf:"varint,4,opt,name=charge_percent,json=chargePercent,proto3" json:"charge_percent,omitempty"`
 	// Общий наезд в секундах; часы = секунды / 3600.
 	RiddenSeconds int64 `protobuf:"varint,5,opt,name=ridden_seconds,json=riddenSeconds,proto3" json:"ridden_seconds,omitempty"`
 	// Версия записи.
 	Version int64 `protobuf:"varint,6,opt,name=version,proto3" json:"version,omitempty"`
 	// Время обновления, RFC3339 UTC.
-	UpdatedAt     string `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	UpdatedAt string `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	// Разрешены ли новые бронирования; занятость проверяет Rental.
+	IsActive bool `protobuf:"varint,8,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	// Название владельца — юридического лица.
+	Owner         string `protobuf:"bytes,9,opt,name=owner,proto3" json:"owner,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -95,13 +96,6 @@ func (x *Scooter) GetBrand() string {
 	return ""
 }
 
-func (x *Scooter) GetChargePercent() int32 {
-	if x != nil {
-		return x.ChargePercent
-	}
-	return 0
-}
-
 func (x *Scooter) GetRiddenSeconds() int64 {
 	if x != nil {
 		return x.RiddenSeconds
@@ -119,6 +113,20 @@ func (x *Scooter) GetVersion() int64 {
 func (x *Scooter) GetUpdatedAt() string {
 	if x != nil {
 		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *Scooter) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+func (x *Scooter) GetOwner() string {
+	if x != nil {
+		return x.Owner
 	}
 	return ""
 }
@@ -316,39 +324,33 @@ func (x *ListScootersResponse) GetScooters() []*Scooter {
 	return nil
 }
 
-// UpdateScooterRequest: параметры запроса.
-type UpdateScooterRequest struct {
+// UpdateScooterAvailabilityRequest: параметры точечного обновления.
+type UpdateScooterAvailabilityRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// UUID изменяемой записи.
+	// UUID самоката.
 	ScooterId string `protobuf:"bytes,1,opt,name=scooter_id,json=scooterId,proto3" json:"scooter_id,omitempty"`
-	// Обязательная версия, прочитанная перед обновлением.
+	// Версия, прочитанная перед обновлением.
 	ExpectedVersion int64 `protobuf:"varint,2,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-	// Новый номер; отсутствует — не менять.
-	Number *string `protobuf:"bytes,3,opt,name=number,proto3,oneof" json:"number,omitempty"`
-	// Новая марка; отсутствует — не менять.
-	Brand *string `protobuf:"bytes,4,opt,name=brand,proto3,oneof" json:"brand,omitempty"`
-	// Новый заряд 0–100%; отсутствие отличается от нуля.
-	ChargePercent *int32 `protobuf:"varint,5,opt,name=charge_percent,json=chargePercent,proto3,oneof" json:"charge_percent,omitempty"`
-	// Обновлённый наезд в секундах; уменьшение запрещено.
-	RiddenSeconds *int64 `protobuf:"varint,6,opt,name=ridden_seconds,json=riddenSeconds,proto3,oneof" json:"ridden_seconds,omitempty"`
+	// Обязательный флаг; false явно запрещает новые бронирования.
+	IsActive      *bool `protobuf:"varint,3,opt,name=is_active,json=isActive,proto3,oneof" json:"is_active,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpdateScooterRequest) Reset() {
-	*x = UpdateScooterRequest{}
+func (x *UpdateScooterAvailabilityRequest) Reset() {
+	*x = UpdateScooterAvailabilityRequest{}
 	mi := &file_api_gateway_scooter_v1_scooter_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateScooterRequest) String() string {
+func (x *UpdateScooterAvailabilityRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateScooterRequest) ProtoMessage() {}
+func (*UpdateScooterAvailabilityRequest) ProtoMessage() {}
 
-func (x *UpdateScooterRequest) ProtoReflect() protoreflect.Message {
+func (x *UpdateScooterAvailabilityRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_api_gateway_scooter_v1_scooter_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -360,76 +362,55 @@ func (x *UpdateScooterRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateScooterRequest.ProtoReflect.Descriptor instead.
-func (*UpdateScooterRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UpdateScooterAvailabilityRequest.ProtoReflect.Descriptor instead.
+func (*UpdateScooterAvailabilityRequest) Descriptor() ([]byte, []int) {
 	return file_api_gateway_scooter_v1_scooter_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *UpdateScooterRequest) GetScooterId() string {
+func (x *UpdateScooterAvailabilityRequest) GetScooterId() string {
 	if x != nil {
 		return x.ScooterId
 	}
 	return ""
 }
 
-func (x *UpdateScooterRequest) GetExpectedVersion() int64 {
+func (x *UpdateScooterAvailabilityRequest) GetExpectedVersion() int64 {
 	if x != nil {
 		return x.ExpectedVersion
 	}
 	return 0
 }
 
-func (x *UpdateScooterRequest) GetNumber() string {
-	if x != nil && x.Number != nil {
-		return *x.Number
+func (x *UpdateScooterAvailabilityRequest) GetIsActive() bool {
+	if x != nil && x.IsActive != nil {
+		return *x.IsActive
 	}
-	return ""
+	return false
 }
 
-func (x *UpdateScooterRequest) GetBrand() string {
-	if x != nil && x.Brand != nil {
-		return *x.Brand
-	}
-	return ""
-}
-
-func (x *UpdateScooterRequest) GetChargePercent() int32 {
-	if x != nil && x.ChargePercent != nil {
-		return *x.ChargePercent
-	}
-	return 0
-}
-
-func (x *UpdateScooterRequest) GetRiddenSeconds() int64 {
-	if x != nil && x.RiddenSeconds != nil {
-		return *x.RiddenSeconds
-	}
-	return 0
-}
-
-// UpdateScooterResponse: результат операции.
-type UpdateScooterResponse struct {
+// UpdateScooterAvailabilityResponse: карточка после сохранения.
+type UpdateScooterAvailabilityResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Карточка после сохранения.
+	// Сохранённый самокат.
 	Scooter       *Scooter `protobuf:"bytes,1,opt,name=scooter,proto3" json:"scooter,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpdateScooterResponse) Reset() {
-	*x = UpdateScooterResponse{}
+func (x *UpdateScooterAvailabilityResponse) Reset() {
+	*x = UpdateScooterAvailabilityResponse{}
 	mi := &file_api_gateway_scooter_v1_scooter_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateScooterResponse) String() string {
+func (x *UpdateScooterAvailabilityResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateScooterResponse) ProtoMessage() {}
+func (*UpdateScooterAvailabilityResponse) ProtoMessage() {}
 
-func (x *UpdateScooterResponse) ProtoReflect() protoreflect.Message {
+func (x *UpdateScooterAvailabilityResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_api_gateway_scooter_v1_scooter_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -441,12 +422,122 @@ func (x *UpdateScooterResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateScooterResponse.ProtoReflect.Descriptor instead.
-func (*UpdateScooterResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UpdateScooterAvailabilityResponse.ProtoReflect.Descriptor instead.
+func (*UpdateScooterAvailabilityResponse) Descriptor() ([]byte, []int) {
 	return file_api_gateway_scooter_v1_scooter_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *UpdateScooterResponse) GetScooter() *Scooter {
+func (x *UpdateScooterAvailabilityResponse) GetScooter() *Scooter {
+	if x != nil {
+		return x.Scooter
+	}
+	return nil
+}
+
+// UpdateScooterOwnerRequest: параметры точечного обновления.
+type UpdateScooterOwnerRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UUID самоката.
+	ScooterId string `protobuf:"bytes,1,opt,name=scooter_id,json=scooterId,proto3" json:"scooter_id,omitempty"`
+	// Версия, прочитанная перед обновлением.
+	ExpectedVersion int64 `protobuf:"varint,2,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
+	// Непустое название юридического лица, до 200 символов.
+	Owner         string `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateScooterOwnerRequest) Reset() {
+	*x = UpdateScooterOwnerRequest{}
+	mi := &file_api_gateway_scooter_v1_scooter_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateScooterOwnerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateScooterOwnerRequest) ProtoMessage() {}
+
+func (x *UpdateScooterOwnerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_gateway_scooter_v1_scooter_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateScooterOwnerRequest.ProtoReflect.Descriptor instead.
+func (*UpdateScooterOwnerRequest) Descriptor() ([]byte, []int) {
+	return file_api_gateway_scooter_v1_scooter_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *UpdateScooterOwnerRequest) GetScooterId() string {
+	if x != nil {
+		return x.ScooterId
+	}
+	return ""
+}
+
+func (x *UpdateScooterOwnerRequest) GetExpectedVersion() int64 {
+	if x != nil {
+		return x.ExpectedVersion
+	}
+	return 0
+}
+
+func (x *UpdateScooterOwnerRequest) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+// UpdateScooterOwnerResponse: карточка после сохранения.
+type UpdateScooterOwnerResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Сохранённый самокат.
+	Scooter       *Scooter `protobuf:"bytes,1,opt,name=scooter,proto3" json:"scooter,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateScooterOwnerResponse) Reset() {
+	*x = UpdateScooterOwnerResponse{}
+	mi := &file_api_gateway_scooter_v1_scooter_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateScooterOwnerResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateScooterOwnerResponse) ProtoMessage() {}
+
+func (x *UpdateScooterOwnerResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_gateway_scooter_v1_scooter_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateScooterOwnerResponse.ProtoReflect.Descriptor instead.
+func (*UpdateScooterOwnerResponse) Descriptor() ([]byte, []int) {
+	return file_api_gateway_scooter_v1_scooter_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *UpdateScooterOwnerResponse) GetScooter() *Scooter {
 	if x != nil {
 		return x.Scooter
 	}
@@ -457,16 +548,17 @@ var File_api_gateway_scooter_v1_scooter_proto protoreflect.FileDescriptor
 
 const file_api_gateway_scooter_v1_scooter_proto_rawDesc = "" +
 	"\n" +
-	"$api-gateway/scooter/v1/scooter.proto\x12\x16api_gateway.scooter.v1\x1a\x1cgoogle/api/annotations.proto\"\xce\x01\n" +
+	"$api-gateway/scooter/v1/scooter.proto\x12\x16api_gateway.scooter.v1\x1a\x1cgoogle/api/annotations.proto\"\xda\x01\n" +
 	"\aScooter\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06number\x18\x02 \x01(\tR\x06number\x12\x14\n" +
 	"\x05brand\x18\x03 \x01(\tR\x05brand\x12%\n" +
-	"\x0echarge_percent\x18\x04 \x01(\x05R\rchargePercent\x12%\n" +
 	"\x0eridden_seconds\x18\x05 \x01(\x03R\rriddenSeconds\x12\x18\n" +
 	"\aversion\x18\x06 \x01(\x03R\aversion\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\tR\tupdatedAt\"2\n" +
+	"updated_at\x18\a \x01(\tR\tupdatedAt\x12\x1b\n" +
+	"\tis_active\x18\b \x01(\bR\bisActive\x12\x14\n" +
+	"\x05owner\x18\t \x01(\tR\x05owner\"2\n" +
 	"\x11GetScooterRequest\x12\x1d\n" +
 	"\n" +
 	"scooter_id\x18\x01 \x01(\tR\tscooterId\"O\n" +
@@ -476,26 +568,29 @@ const file_api_gateway_scooter_v1_scooter_proto_rawDesc = "" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\"S\n" +
 	"\x14ListScootersResponse\x12;\n" +
-	"\bscooters\x18\x01 \x03(\v2\x1f.api_gateway.scooter.v1.ScooterR\bscooters\"\xab\x02\n" +
-	"\x14UpdateScooterRequest\x12\x1d\n" +
+	"\bscooters\x18\x01 \x03(\v2\x1f.api_gateway.scooter.v1.ScooterR\bscooters\"\x9c\x01\n" +
+	" UpdateScooterAvailabilityRequest\x12\x1d\n" +
 	"\n" +
 	"scooter_id\x18\x01 \x01(\tR\tscooterId\x12)\n" +
-	"\x10expected_version\x18\x02 \x01(\x03R\x0fexpectedVersion\x12\x1b\n" +
-	"\x06number\x18\x03 \x01(\tH\x00R\x06number\x88\x01\x01\x12\x19\n" +
-	"\x05brand\x18\x04 \x01(\tH\x01R\x05brand\x88\x01\x01\x12*\n" +
-	"\x0echarge_percent\x18\x05 \x01(\x05H\x02R\rchargePercent\x88\x01\x01\x12*\n" +
-	"\x0eridden_seconds\x18\x06 \x01(\x03H\x03R\rriddenSeconds\x88\x01\x01B\t\n" +
-	"\a_numberB\b\n" +
-	"\x06_brandB\x11\n" +
-	"\x0f_charge_percentB\x11\n" +
-	"\x0f_ridden_seconds\"R\n" +
-	"\x15UpdateScooterResponse\x129\n" +
-	"\ascooter\x18\x01 \x01(\v2\x1f.api_gateway.scooter.v1.ScooterR\ascooter2\xaf\x03\n" +
+	"\x10expected_version\x18\x02 \x01(\x03R\x0fexpectedVersion\x12 \n" +
+	"\tis_active\x18\x03 \x01(\bH\x00R\bisActive\x88\x01\x01B\f\n" +
+	"\n" +
+	"_is_active\"^\n" +
+	"!UpdateScooterAvailabilityResponse\x129\n" +
+	"\ascooter\x18\x01 \x01(\v2\x1f.api_gateway.scooter.v1.ScooterR\ascooter\"{\n" +
+	"\x19UpdateScooterOwnerRequest\x12\x1d\n" +
+	"\n" +
+	"scooter_id\x18\x01 \x01(\tR\tscooterId\x12)\n" +
+	"\x10expected_version\x18\x02 \x01(\x03R\x0fexpectedVersion\x12\x14\n" +
+	"\x05owner\x18\x03 \x01(\tR\x05owner\"W\n" +
+	"\x1aUpdateScooterOwnerResponse\x129\n" +
+	"\ascooter\x18\x01 \x01(\v2\x1f.api_gateway.scooter.v1.ScooterR\ascooter2\x8a\x05\n" +
 	"\x0eScooterService\x12\x86\x01\n" +
 	"\n" +
 	"GetScooter\x12).api_gateway.scooter.v1.GetScooterRequest\x1a*.api_gateway.scooter.v1.GetScooterResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/scooters/{scooter_id}\x12\x7f\n" +
-	"\fListScooters\x12+.api_gateway.scooter.v1.ListScootersRequest\x1a,.api_gateway.scooter.v1.ListScootersResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/scooters\x12\x92\x01\n" +
-	"\rUpdateScooter\x12,.api_gateway.scooter.v1.UpdateScooterRequest\x1a-.api_gateway.scooter.v1.UpdateScooterResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*2\x19/v1/scooters/{scooter_id}B>Z<api-gateway/internal/pkg/pb/api-gateway/scooter/v1;scooterV1b\x06proto3"
+	"\fListScooters\x12+.api_gateway.scooter.v1.ListScootersRequest\x1a,.api_gateway.scooter.v1.ListScootersResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/scooters\x12\xc3\x01\n" +
+	"\x19UpdateScooterAvailability\x128.api_gateway.scooter.v1.UpdateScooterAvailabilityRequest\x1a9.api_gateway.scooter.v1.UpdateScooterAvailabilityResponse\"1\x82\xd3\xe4\x93\x02+:\x01*2&/v1/scooters/{scooter_id}/availability\x12\xa7\x01\n" +
+	"\x12UpdateScooterOwner\x121.api_gateway.scooter.v1.UpdateScooterOwnerRequest\x1a2.api_gateway.scooter.v1.UpdateScooterOwnerResponse\"*\x82\xd3\xe4\x93\x02$:\x01*2\x1f/v1/scooters/{scooter_id}/ownerB>Z<api-gateway/internal/pkg/pb/api-gateway/scooter/v1;scooterV1b\x06proto3"
 
 var (
 	file_api_gateway_scooter_v1_scooter_proto_rawDescOnce sync.Once
@@ -509,31 +604,36 @@ func file_api_gateway_scooter_v1_scooter_proto_rawDescGZIP() []byte {
 	return file_api_gateway_scooter_v1_scooter_proto_rawDescData
 }
 
-var file_api_gateway_scooter_v1_scooter_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_api_gateway_scooter_v1_scooter_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_api_gateway_scooter_v1_scooter_proto_goTypes = []any{
-	(*Scooter)(nil),               // 0: api_gateway.scooter.v1.Scooter
-	(*GetScooterRequest)(nil),     // 1: api_gateway.scooter.v1.GetScooterRequest
-	(*GetScooterResponse)(nil),    // 2: api_gateway.scooter.v1.GetScooterResponse
-	(*ListScootersRequest)(nil),   // 3: api_gateway.scooter.v1.ListScootersRequest
-	(*ListScootersResponse)(nil),  // 4: api_gateway.scooter.v1.ListScootersResponse
-	(*UpdateScooterRequest)(nil),  // 5: api_gateway.scooter.v1.UpdateScooterRequest
-	(*UpdateScooterResponse)(nil), // 6: api_gateway.scooter.v1.UpdateScooterResponse
+	(*Scooter)(nil),                           // 0: api_gateway.scooter.v1.Scooter
+	(*GetScooterRequest)(nil),                 // 1: api_gateway.scooter.v1.GetScooterRequest
+	(*GetScooterResponse)(nil),                // 2: api_gateway.scooter.v1.GetScooterResponse
+	(*ListScootersRequest)(nil),               // 3: api_gateway.scooter.v1.ListScootersRequest
+	(*ListScootersResponse)(nil),              // 4: api_gateway.scooter.v1.ListScootersResponse
+	(*UpdateScooterAvailabilityRequest)(nil),  // 5: api_gateway.scooter.v1.UpdateScooterAvailabilityRequest
+	(*UpdateScooterAvailabilityResponse)(nil), // 6: api_gateway.scooter.v1.UpdateScooterAvailabilityResponse
+	(*UpdateScooterOwnerRequest)(nil),         // 7: api_gateway.scooter.v1.UpdateScooterOwnerRequest
+	(*UpdateScooterOwnerResponse)(nil),        // 8: api_gateway.scooter.v1.UpdateScooterOwnerResponse
 }
 var file_api_gateway_scooter_v1_scooter_proto_depIdxs = []int32{
 	0, // 0: api_gateway.scooter.v1.GetScooterResponse.scooter:type_name -> api_gateway.scooter.v1.Scooter
 	0, // 1: api_gateway.scooter.v1.ListScootersResponse.scooters:type_name -> api_gateway.scooter.v1.Scooter
-	0, // 2: api_gateway.scooter.v1.UpdateScooterResponse.scooter:type_name -> api_gateway.scooter.v1.Scooter
-	1, // 3: api_gateway.scooter.v1.ScooterService.GetScooter:input_type -> api_gateway.scooter.v1.GetScooterRequest
-	3, // 4: api_gateway.scooter.v1.ScooterService.ListScooters:input_type -> api_gateway.scooter.v1.ListScootersRequest
-	5, // 5: api_gateway.scooter.v1.ScooterService.UpdateScooter:input_type -> api_gateway.scooter.v1.UpdateScooterRequest
-	2, // 6: api_gateway.scooter.v1.ScooterService.GetScooter:output_type -> api_gateway.scooter.v1.GetScooterResponse
-	4, // 7: api_gateway.scooter.v1.ScooterService.ListScooters:output_type -> api_gateway.scooter.v1.ListScootersResponse
-	6, // 8: api_gateway.scooter.v1.ScooterService.UpdateScooter:output_type -> api_gateway.scooter.v1.UpdateScooterResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	0, // 2: api_gateway.scooter.v1.UpdateScooterAvailabilityResponse.scooter:type_name -> api_gateway.scooter.v1.Scooter
+	0, // 3: api_gateway.scooter.v1.UpdateScooterOwnerResponse.scooter:type_name -> api_gateway.scooter.v1.Scooter
+	1, // 4: api_gateway.scooter.v1.ScooterService.GetScooter:input_type -> api_gateway.scooter.v1.GetScooterRequest
+	3, // 5: api_gateway.scooter.v1.ScooterService.ListScooters:input_type -> api_gateway.scooter.v1.ListScootersRequest
+	5, // 6: api_gateway.scooter.v1.ScooterService.UpdateScooterAvailability:input_type -> api_gateway.scooter.v1.UpdateScooterAvailabilityRequest
+	7, // 7: api_gateway.scooter.v1.ScooterService.UpdateScooterOwner:input_type -> api_gateway.scooter.v1.UpdateScooterOwnerRequest
+	2, // 8: api_gateway.scooter.v1.ScooterService.GetScooter:output_type -> api_gateway.scooter.v1.GetScooterResponse
+	4, // 9: api_gateway.scooter.v1.ScooterService.ListScooters:output_type -> api_gateway.scooter.v1.ListScootersResponse
+	6, // 10: api_gateway.scooter.v1.ScooterService.UpdateScooterAvailability:output_type -> api_gateway.scooter.v1.UpdateScooterAvailabilityResponse
+	8, // 11: api_gateway.scooter.v1.ScooterService.UpdateScooterOwner:output_type -> api_gateway.scooter.v1.UpdateScooterOwnerResponse
+	8, // [8:12] is the sub-list for method output_type
+	4, // [4:8] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_api_gateway_scooter_v1_scooter_proto_init() }
@@ -548,7 +648,7 @@ func file_api_gateway_scooter_v1_scooter_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_gateway_scooter_v1_scooter_proto_rawDesc), len(file_api_gateway_scooter_v1_scooter_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

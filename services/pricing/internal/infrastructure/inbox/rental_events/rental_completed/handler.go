@@ -30,7 +30,6 @@ func (h *Handler) HandleEvent(ctx context.Context, body []byte) error {
 		UserID:        uuid.FromStringOrNil(e.Payload.UserID),
 		ScooterID:     uuid.FromStringOrNil(e.Payload.ScooterID),
 		RentalVersion: e.RentalVersion,
-		ReservedAt:    e.Payload.ReservedAt,
 		StartedAt:     e.Payload.StartedAt,
 		FinishedAt:    e.Payload.FinishedAt,
 	})

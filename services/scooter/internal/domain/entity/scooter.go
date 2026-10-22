@@ -1,44 +1,103 @@
 package entity
 
 import (
-	app "scooter/internal/pkg/scootererror"
 	"strings"
 	"time"
+	"unicode/utf8"
 
-	"github.com/samber/mo"
+	"github.com/gofrs/uuid"
+
+	app "scooter/internal/pkg/scootererror"
 )
 
-func (e *Scooter) Update(number, brand mo.Option[string], charge mo.Option[int], ridden mo.Option[int64], expectedVersion int, at time.Time) error {
-	if expectedVersion != e.Version() {
-		return app.NewConflictErr("Самокат уже изменён; перечитайте его")
+type Scooter struct {
+	id            uuid.UUID
+	number        string
+	brand         string
+	isActive      bool
+	owner         string
+	riddenSeconds int64
+	updatedAt     time.Time
+	version       version
+}
+
+func (e *Scooter) ID() uuid.UUID {
+	return e.id
+}
+
+func (e *Scooter) Number() string {
+	return e.number
+}
+
+func (e *Scooter) Brand() string {
+	return e.brand
+}
+
+func (e *Scooter) IsActive() bool {
+	return e.isActive
+}
+
+func (e *Scooter) Owner() string {
+	return e.owner
+}
+
+func (e *Scooter) RiddenSeconds() int64 {
+	return e.riddenSeconds
+}
+
+func (e *Scooter) UpdatedAt() time.Time {
+	return e.updatedAt
+}
+
+func (e *Scooter) OldVersion() int {
+	return e.version.Old
+}
+
+func (e *Scooter) Version() int {
+	if e.version.new != nil {
+		return *e.version.new
 	}
-	nextNumber, nextBrand, nextCharge, nextRidden := e.number, e.brand, e.chargePercent, e.riddenSeconds
-	if value, ok := number.Get(); ok {
-		nextNumber = strings.TrimSpace(value)
+	return e.version.Old
+}
+
+// ExpectVersion задаёт условие записи; сравнение выполняется только в SQL UPDATE.
+func (e *Scooter) ExpectVersion(expected int) {
+	e.version.expected = &expected
+}
+
+// ExpectedVersion возвращает ожидаемую клиентом версию или версию прочитанного снимка.
+func (e *Scooter) ExpectedVersion() int {
+	if e.version.expected != nil {
+		return *e.version.expected
 	}
-	if value, ok := brand.Get(); ok {
-		nextBrand = strings.TrimSpace(value)
+	return e.version.Old
+}
+
+// SetActive разрешает или запрещает новые бронирования.
+func (e *Scooter) SetActive(isActive bool, at time.Time) {
+	if isActive == e.isActive {
+		return
 	}
-	if value, ok := charge.Get(); ok {
-		nextCharge = value
+	e.isActive = isActive
+	e.changed(at)
+}
+
+// ChangeOwner меняет название юридического лица — владельца самоката.
+func (e *Scooter) ChangeOwner(owner string, at time.Time) error {
+	owner = strings.TrimSpace(owner)
+	if owner == "" || utf8.RuneCountInString(owner) > 200 {
+		return app.NewInvalidArgumentErr("Название владельца должно содержать от 1 до 200 символов")
 	}
-	if value, ok := ridden.Get(); ok {
-		nextRidden = value
+	if owner == e.owner {
+		return nil
 	}
-	if nextNumber == "" || len(nextNumber) > 40 {
-		return app.NewInvalidArgumentErr("Номер самоката должен содержать от 1 до 40 байт")
-	}
-	if nextBrand == "" || len(nextBrand) > 100 {
-		return app.NewInvalidArgumentErr("Марка должна содержать от 1 до 100 байт")
-	}
-	if nextCharge < 0 || nextCharge > 100 {
-		return app.NewInvalidArgumentErr("Заряд должен находиться в диапазоне 0–100 процентов")
-	}
-	if nextRidden < e.riddenSeconds || nextRidden < 0 {
-		return app.NewBusinessErr("Счётчик наезда нельзя уменьшить")
-	}
-	e.number, e.brand, e.chargePercent, e.riddenSeconds = nextNumber, nextBrand, nextCharge, nextRidden
+	e.owner = owner
+	e.changed(at)
+	return nil
+}
+
+// changed объединяет изменения полей в одну новую версию сохраняемого снимка.
+func (e *Scooter) changed(at time.Time) {
 	e.updatedAt = at.UTC().Truncate(time.Microsecond)
 	e.version.inc()
-	return nil
 }

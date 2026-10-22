@@ -2,6 +2,7 @@ package list
 
 import (
 	"context"
+
 	"profile/internal/domain/entity"
 	app "profile/internal/pkg/profileerror"
 )
@@ -9,6 +10,7 @@ import (
 type Storage interface {
 	List(context.Context, int, int) ([]*entity.User, error)
 }
+
 type UseCase struct {
 	storage Storage
 }
@@ -16,6 +18,7 @@ type UseCase struct {
 func New(storage Storage) *UseCase {
 	return &UseCase{storage: storage}
 }
+
 func (s *UseCase) Execute(ctx context.Context, input Input) ([]*entity.User, error) {
 	if input.Limit == 0 {
 		input.Limit = 20

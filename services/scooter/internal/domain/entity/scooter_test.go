@@ -1,61 +1,46 @@
 package entity
 
 import (
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/samber/mo"
+
+	app "scooter/internal/pkg/scootererror"
 )
 
-func TestTelemetryUpdate(t *testing.T) {
-	for _, test := range []struct {
-		name     string
-		charge   int
-		ridden   int64
-		rejected bool
-	}{
-		{
-			name:   "zero charge is explicit",
-			charge: 0,
-			ridden: 7200,
-		},
-		{
-			name:   "charged",
-			charge: 100,
-			ridden: 8000,
-		},
-		{
-			name:     "charge above range",
-			charge:   101,
-			ridden:   7200,
-			rejected: true,
-		},
-		{
-			name:     "negative charge",
-			charge:   -1,
-			ridden:   7200,
-			rejected: true,
-		},
-		{
-			name:     "odometer regression",
-			charge:   50,
-			ridden:   1,
-			rejected: true,
-		},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			scooter := With(uuid.Must(uuid.NewV4()), WithNumber("SC-1"), WithBrand("Ninebot"), WithChargePercent(90), WithRiddenSeconds(7200), WithVersion(1))
-			err := scooter.Update(mo.None[string](), mo.None[string](), mo.Some(test.charge), mo.Some(test.ridden), 1, time.Now())
-			if (err != nil) != test.rejected {
-				t.Fatalf("error: %v", err)
-			}
-			if test.rejected && (scooter.ChargePercent() != 90 || scooter.Version() != 1) {
-				t.Fatal("failed update mutated scooter")
-			}
-			if !test.rejected && (scooter.ChargePercent() != test.charge || scooter.RiddenSeconds() != test.ridden || scooter.Version() != 2) {
-				t.Fatal("successful update lost fields")
-			}
-		})
+func TestAvailabilityDoesNotChangeCatalogueOrOwner(t *testing.T) {
+	at := time.Now().UTC().Truncate(time.Microsecond)
+	scooter := With(uuid.Must(uuid.NewV4()), WithNumber("SC-1"), WithBrand("Ninebot"), WithOwner("ООО Прокат"), WithIsActive(true), WithRiddenSeconds(7200), WithVersion(1))
+	scooter.SetActive(false, at)
+	if scooter.IsActive() || scooter.Version() != 2 || scooter.OldVersion() != 1 || scooter.Owner() != "ООО Прокат" || scooter.Number() != "SC-1" || scooter.Brand() != "Ninebot" || scooter.RiddenSeconds() != 7200 {
+		t.Fatal("availability change affected other fields")
+	}
+	scooter.SetActive(false, at.Add(time.Hour))
+	if !scooter.UpdatedAt().Equal(at) || scooter.Version() != 2 {
+		t.Fatal("same availability changed timestamp or version")
+	}
+}
+
+func TestOwnerValidationAndNormalization(t *testing.T) {
+	for _, owner := range []string{"", "  ", strings.Repeat("я", 201)} {
+		scooter := With(uuid.Must(uuid.NewV4()), WithOwner("ООО Прокат"), WithIsActive(false), WithVersion(1))
+		if err := scooter.ChangeOwner(owner, time.Now()); !app.IsCode(err, app.InvalidArgument) {
+			t.Fatalf("invalid owner accepted: %v", err)
+		}
+		if scooter.Owner() != "ООО Прокат" || scooter.Version() != 1 {
+			t.Fatal("rejected owner mutated entity")
+		}
+	}
+	scooter := With(uuid.Must(uuid.NewV4()), WithOwner("ООО Прокат"), WithIsActive(false), WithVersion(1))
+	if err := scooter.ChangeOwner("  ООО Новый владелец  ", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if scooter.Owner() != "ООО Новый владелец" || scooter.IsActive() || scooter.Version() != 2 {
+		t.Fatal("owner was not normalized or changed availability")
+	}
+	if err := scooter.ChangeOwner(strings.Repeat("я", 200), time.Now()); err != nil {
+		t.Fatalf("200 Unicode characters rejected: %v", err)
 	}
 }

@@ -5,7 +5,6 @@ package scooterV1
 import (
 	context "context"
 	_ "embed"
-
 	runtime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	transport "github.com/not-for-prod/clay/transport"
 	httptransport "github.com/not-for-prod/clay/transport/httptransport"
@@ -92,20 +91,38 @@ func (w *ScooterServiceServiceDesc) ListScooters(ctx context.Context, in *ListSc
 	return resp.(*ListScootersResponse), err
 }
 
-func (w *ScooterServiceServiceDesc) UpdateScooter(ctx context.Context, in *UpdateScooterRequest) (*UpdateScooterResponse, error) {
+func (w *ScooterServiceServiceDesc) UpdateScooterAvailability(ctx context.Context, in *UpdateScooterAvailabilityRequest) (*UpdateScooterAvailabilityResponse, error) {
 	if w.opts.UnaryInterceptor == nil {
-		return w.svc.UpdateScooter(ctx, in)
+		return w.svc.UpdateScooterAvailability(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     w,
-		FullMethod: "/api_gateway.scooter.v1.ScooterService/UpdateScooter",
+		FullMethod: "/api_gateway.scooter.v1.ScooterService/UpdateScooterAvailability",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return w.svc.UpdateScooter(ctx, req.(*UpdateScooterRequest))
+		return w.svc.UpdateScooterAvailability(ctx, req.(*UpdateScooterAvailabilityRequest))
 	}
 	resp, err := w.opts.UnaryInterceptor(ctx, in, info, handler)
 	if err != nil || resp == nil {
 		return nil, err
 	}
-	return resp.(*UpdateScooterResponse), err
+	return resp.(*UpdateScooterAvailabilityResponse), err
+}
+
+func (w *ScooterServiceServiceDesc) UpdateScooterOwner(ctx context.Context, in *UpdateScooterOwnerRequest) (*UpdateScooterOwnerResponse, error) {
+	if w.opts.UnaryInterceptor == nil {
+		return w.svc.UpdateScooterOwner(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     w,
+		FullMethod: "/api_gateway.scooter.v1.ScooterService/UpdateScooterOwner",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return w.svc.UpdateScooterOwner(ctx, req.(*UpdateScooterOwnerRequest))
+	}
+	resp, err := w.opts.UnaryInterceptor(ctx, in, info, handler)
+	if err != nil || resp == nil {
+		return nil, err
+	}
+	return resp.(*UpdateScooterOwnerResponse), err
 }

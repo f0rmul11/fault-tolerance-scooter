@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"profile/internal/application/service"
 	"profile/internal/application/usecase/profile/get"
 	"profile/internal/application/usecase/profile/list"
 	"profile/internal/application/usecase/profile/update"
@@ -13,10 +14,10 @@ type Registry struct {
 	UpdateProfile *update.UseCase
 }
 
-func NewRegistry(storage *storage.Registry) *Registry {
+func NewRegistry(storage *storage.Registry, services *service.Registry) *Registry {
 	return &Registry{
 		GetProfile:    get.New(storage.Profiles),
 		ListProfiles:  list.New(storage.Profiles),
-		UpdateProfile: update.New(storage.Profiles),
+		UpdateProfile: update.New(storage.Profiles, services.UpdateProfile),
 	}
 }
