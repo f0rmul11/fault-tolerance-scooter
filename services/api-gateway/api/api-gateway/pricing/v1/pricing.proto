@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package api_gateway.pricing.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "api-gateway/internal/pkg/pb/api-gateway/pricing/v1;pricingV1";
+
+// API области pricing.
+service PricingService {
+  // Читает асинхронный результат расчёта поездки.
+  rpc GetTrip(GetTripRequest) returns (GetTripResponse) {
+    option (google.api.http) = {get: "/v1/pricing/trips/{rental_id}"};
+  }
+
+  // Читает цены за минуту и суммы авансов.
+  rpc ListTariffs(ListTariffsRequest) returns (ListTariffsResponse) {
+    option (google.api.http) = {get: "/v1/pricing/tariffs"};
+  }
+}
+
+// Допустимые значения TripStatus; UNSPECIFIED не является бизнес-значением.
+enum TripStatus {
+  // UNSPECIFIED.
+  TRIP_STATUS_UNSPECIFIED = 0;
+  // RESERVED.
+  TRIP_STATUS_RESERVED = 1;
+  // ACTIVE.
+  TRIP_STATUS_ACTIVE = 2;
+  // COMPLETED.
+  TRIP_STATUS_COMPLETED = 3;
+  // CANCELED.
+  TRIP_STATUS_CANCELED = 4;
+}
+
+// Trip: транспортное представление данных.
+message Trip {
+  // UUID аренды, к которой относится расчёт.
+  string rental_id = 1;
+
+  // UUID пользователя.
+  string user_id = 2;
+
+  // UUID самоката.
+  string scooter_id = 3;
+
+  // Снимок подписки BASE, PREMIUM или ULTRA.
+  string plan = 4;
+
+  // Цена минуты в копейках RUB.
+  int64 rate_minor = 5;
+
+  // Сумма аванса в копейках RUB.
+  int64 advance_minor = 6;
+
+  // Учтённое списание за вычетом возвратов в копейках.
+  int64 charged_minor = 7;
+
+  // Итоговая стоимость; отсутствует до завершения или отмены.
+  optional int64 total_minor = 8;
+
+  // Доплата (плюс) или возврат (минус) относительно аванса; отсутствует до расчёта.
+  optional int64 adjustment_minor = 9;
+
+  // Начатые минуты; минимум одна после завершения.
+  int64 billed_minutes = 10;
+
+  // Состояние расчёта; обновляется асинхронно через Kafka.
+  TripStatus status = 11;
+
+  // Последняя применённая версия аренды.
+  int64 rental_version = 12;
+
+  // Валюта RUB.
+  string currency = 13;
+}
+
+// Tariff: транспортное представление данных.
+message Tariff {
+  // Подписка BASE, PREMIUM или ULTRA.
+  string plan = 1;
+
+  // Цена минуты в копейках RUB.
+  int64 rate_minor = 2;
+
+  // Аванс за старт в копейках RUB.
+  int64 advance_minor = 3;
+
+  // Валюта RUB.
+  string currency = 4;
+}
+
+// GetTripRequest: параметры запроса.
+message GetTripRequest {
+  // UUID аренды.
+  string rental_id = 1;
+
+  // UUID владельца расчёта.
+  string user_id = 2;
+}
+
+// GetTripResponse: результат операции.
+message GetTripResponse {
+  // Расчёт; NotFound до обработки события бронирования.
+  Trip trip = 1;
+}
+
+// ListTariffsRequest: параметры запроса.
+message ListTariffsRequest {}
+
+// ListTariffsResponse: результат операции.
+message ListTariffsResponse {
+  // Действующие тарифы; существующие снимки поездок не меняются.
+  repeated Tariff tariffs = 1;
+}

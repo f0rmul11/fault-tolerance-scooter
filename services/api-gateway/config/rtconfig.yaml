@@ -1,0 +1,7 @@
+realtimeConfig:
+  scooters_list_enabled:
+    usage: Учебный флаг каталога самокатов; пока не влияет на API
+    group: features
+    value: "false"
+    type: bool
+    writable: true

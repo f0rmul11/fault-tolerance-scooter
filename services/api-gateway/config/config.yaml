@@ -1,0 +1,28 @@
+graceful:
+  timeout: 10s
+
+grpc_server:
+  port: 9090
+  max_connection_idle: 5m
+  max_connection_age: 30m
+  timeout: 5s
+  time: 2h
+
+http_server:
+  port: 8080
+  admin_port: 8081
+
+service:
+  profile: "profile:9090"
+  scooter: "scooter:9090"
+  rental: "rental:9090"
+  pricing: "pricing:9090"
+
+
+# Для локального запуска через make config-etcd. В k3s endpoint задан в Deployment.
+runtime_config:
+  endpoints: ["http://127.0.0.1:2379"]
+  prefix: /scooterflow/dev/services/api-gateway/rtconfig/v1/values/
+  schema_path: rtconfig.yaml
+  startup_timeout: 5s
+  shutdown_timeout: 3s

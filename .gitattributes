@@ -1,0 +1,2 @@
+# Unified diff context lines intentionally retain their leading marker.
+tools/*.patch -whitespace

@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package api_gateway.profile.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "api-gateway/internal/pkg/pb/api-gateway/profile/v1;profileV1";
+
+// API области profile.
+service ProfileService {
+  // Читает карточку по UUID.
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse) {
+    option (google.api.http) = {get: "/v1/profiles/{user_id}"};
+  }
+
+  // Читает страницу справочника.
+  rpc ListProfiles(ListProfilesRequest) returns (ListProfilesResponse) {
+    option (google.api.http) = {get: "/v1/profiles"};
+  }
+
+  // Атомарно обновляет переданные поля с проверкой версии.
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse) {
+    option (google.api.http) = {
+      patch: "/v1/profiles/{user_id}"
+      body: "*"
+    };
+  }
+}
+
+// Допустимые значения SubscriptionPlan; UNSPECIFIED не является бизнес-значением.
+enum SubscriptionPlan {
+  // UNSPECIFIED.
+  SUBSCRIPTION_PLAN_UNSPECIFIED = 0;
+  // BASE.
+  SUBSCRIPTION_PLAN_BASE = 1;
+  // PREMIUM.
+  SUBSCRIPTION_PLAN_PREMIUM = 2;
+  // ULTRA.
+  SUBSCRIPTION_PLAN_ULTRA = 3;
+}
+
+// User: транспортное представление данных.
+message User {
+  // UUID пользователя.
+  string id = 1;
+
+  // Отображаемое имя.
+  string name = 2;
+
+  // Адрес электронной почты.
+  string email = 3;
+
+  // Текущая подписка из отдельной таблицы.
+  SubscriptionPlan plan = 4;
+
+  // Версия для optimistic concurrency.
+  int64 version = 5;
+
+  // Время последнего изменения, RFC3339 UTC.
+  string updated_at = 6;
+}
+
+// GetProfileRequest: параметры запроса.
+message GetProfileRequest {
+  // UUID запрашиваемой записи.
+  string user_id = 1;
+}
+
+// GetProfileResponse: результат операции.
+message GetProfileResponse {
+  // Найденная запись.
+  User profile = 1;
+}
+
+// ListProfilesRequest: параметры запроса.
+message ListProfilesRequest {
+  // Размер страницы: по умолчанию 20, максимум 100.
+  int32 limit = 1;
+
+  // Число пропускаемых строк; неотрицательное.
+  int32 offset = 2;
+}
+
+// ListProfilesResponse: результат операции.
+message ListProfilesResponse {
+  // Страница записей в стабильном порядке UUID.
+  repeated User profiles = 1;
+}
+
+// UpdateProfileRequest: параметры запроса.
+message UpdateProfileRequest {
+  // UUID изменяемой записи.
+  string user_id = 1;
+
+  // Обязательная версия, прочитанная перед обновлением.
+  int64 expected_version = 2;
+
+  // Новое имя; отсутствует — не менять.
+  optional string name = 3;
+
+  // Новый email; отсутствует — не менять.
+  optional string email = 4;
+
+  // Новая подписка; отсутствует — не менять.
+  optional SubscriptionPlan plan = 5;
+}
+
+// UpdateProfileResponse: результат операции.
+message UpdateProfileResponse {
+  // Карточка после сохранения.
+  User profile = 1;
+}

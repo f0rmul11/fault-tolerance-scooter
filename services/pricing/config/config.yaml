@@ -1,0 +1,35 @@
+graceful:
+  timeout: 10s
+
+grpc_server:
+  port: 9090
+  max_connection_idle: 5m
+  max_connection_age: 30m
+  timeout: 5s
+  time: 2h
+
+http_server:
+  port: 8080
+  admin_port: 8081
+
+service:
+  profile: "profile:9090"
+
+postgres_dsn: "postgres://pricing:pricing-local@pricing-postgres:5432/pricing?sslmode=disable"
+postgres:
+  max_connections: 10
+  min_connections: 0
+  max_idle_connections: 0
+  max_conn_lifetime: 1h
+
+kafka_brokers: ["kafka:9092"]
+consumer_group: "pricing-rental-events"
+inbox:
+  config:
+    messages_limit: 100
+    max_err_count_for_message: 5
+    normal_messages_poll_interval: 1s
+    error_messages_poll_interval: 5s
+  topics:
+    rental.events.v1:
+      batch_size: 1

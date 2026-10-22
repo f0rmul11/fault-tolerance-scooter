@@ -1,0 +1,260 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api-gateway/profile/v1/profile.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "ProfileService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/profiles": {
+      "get": {
+        "summary": "Читает страницу справочника.",
+        "operationId": "ProfileService_ListProfiles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.profile.v1.ListProfilesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "description": "Размер страницы: по умолчанию 20, максимум 100.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "offset",
+            "description": "Число пропускаемых строк; неотрицательное.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "ProfileService"
+        ]
+      }
+    },
+    "/v1/profiles/{userId}": {
+      "get": {
+        "summary": "Читает карточку по UUID.",
+        "operationId": "ProfileService_GetProfile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.profile.v1.GetProfileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "description": "UUID запрашиваемой записи.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProfileService"
+        ]
+      },
+      "patch": {
+        "summary": "Атомарно обновляет переданные поля с проверкой версии.",
+        "operationId": "ProfileService_UpdateProfile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.profile.v1.UpdateProfileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "description": "UUID изменяемой записи.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api_gateway.profile.v1.ProfileService.UpdateProfileBody"
+            }
+          }
+        ],
+        "tags": [
+          "ProfileService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "api_gateway.profile.v1.GetProfileResponse": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "$ref": "#/definitions/api_gateway.profile.v1.User",
+          "description": "Найденная запись."
+        }
+      },
+      "description": "GetProfileResponse: результат операции."
+    },
+    "api_gateway.profile.v1.ListProfilesResponse": {
+      "type": "object",
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/api_gateway.profile.v1.User"
+          },
+          "description": "Страница записей в стабильном порядке UUID."
+        }
+      },
+      "description": "ListProfilesResponse: результат операции."
+    },
+    "api_gateway.profile.v1.ProfileService.UpdateProfileBody": {
+      "type": "object",
+      "properties": {
+        "expectedVersion": {
+          "type": "string",
+          "format": "int64",
+          "description": "Обязательная версия, прочитанная перед обновлением."
+        },
+        "name": {
+          "type": "string",
+          "description": "Новое имя; отсутствует — не менять."
+        },
+        "email": {
+          "type": "string",
+          "description": "Новый email; отсутствует — не менять."
+        },
+        "plan": {
+          "$ref": "#/definitions/api_gateway.profile.v1.SubscriptionPlan",
+          "description": "Новая подписка; отсутствует — не менять."
+        }
+      },
+      "description": "UpdateProfileRequest: параметры запроса."
+    },
+    "api_gateway.profile.v1.SubscriptionPlan": {
+      "type": "string",
+      "enum": [
+        "SUBSCRIPTION_PLAN_UNSPECIFIED",
+        "SUBSCRIPTION_PLAN_BASE",
+        "SUBSCRIPTION_PLAN_PREMIUM",
+        "SUBSCRIPTION_PLAN_ULTRA"
+      ],
+      "default": "SUBSCRIPTION_PLAN_UNSPECIFIED",
+      "description": "Допустимые значения SubscriptionPlan; UNSPECIFIED не является бизнес-значением.\n\n - SUBSCRIPTION_PLAN_UNSPECIFIED: UNSPECIFIED.\n - SUBSCRIPTION_PLAN_BASE: BASE.\n - SUBSCRIPTION_PLAN_PREMIUM: PREMIUM.\n - SUBSCRIPTION_PLAN_ULTRA: ULTRA."
+    },
+    "api_gateway.profile.v1.UpdateProfileResponse": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "$ref": "#/definitions/api_gateway.profile.v1.User",
+          "description": "Карточка после сохранения."
+        }
+      },
+      "description": "UpdateProfileResponse: результат операции."
+    },
+    "api_gateway.profile.v1.User": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID пользователя."
+        },
+        "name": {
+          "type": "string",
+          "description": "Отображаемое имя."
+        },
+        "email": {
+          "type": "string",
+          "description": "Адрес электронной почты."
+        },
+        "plan": {
+          "$ref": "#/definitions/api_gateway.profile.v1.SubscriptionPlan",
+          "description": "Текущая подписка из отдельной таблицы."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Версия для optimistic concurrency."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Время последнего изменения, RFC3339 UTC."
+        }
+      },
+      "description": "User: транспортное представление данных."
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "google.rpc.Status": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  }
+}

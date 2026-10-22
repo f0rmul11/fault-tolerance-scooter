@@ -1,0 +1,328 @@
+package cmd
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/config"
+	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/iostreams"
+	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/stand"
+)
+
+type fakeFactory struct {
+	c          config.Config
+	calls      int
+	built      []config.Service
+	block      bool
+	action     string
+	components []config.Service
+	wholeStop  bool
+	reset      bool
+}
+
+func (f *fakeFactory) Config() (config.Config, error) {
+	return f.c, nil
+}
+
+func (f *fakeFactory) NewStand(_ config.Config, _ iostreams.IOStreams) (stand.Interface, error) {
+	f.calls++
+	return &fakeStand{
+		f: f,
+	}, nil
+}
+
+type fakeStand struct {
+	stand.Interface
+	f *fakeFactory
+}
+
+func (s *fakeStand) Close() error {
+	return nil
+}
+
+func (s *fakeStand) Build(ctx context.Context, services []config.Service) error {
+	s.f.built = services
+	if s.f.block {
+		<-ctx.Done()
+		return ctx.Err()
+	}
+	return nil
+}
+
+func commandConfig(t *testing.T) config.Config {
+	t.Helper()
+	root, err := filepath.Abs("../../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, err := config.Load(root, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c
+}
+
+func TestInvalidInputDoesNotCreateRuntime(t *testing.T) {
+	for _, args := range [][]string{
+		{"start"},
+		{"restart"},
+		{
+			"start",
+			"missing",
+		},
+		{
+			"start",
+			"kafka",
+			"kafka",
+		},
+		{
+			"up",
+			"--agents",
+			"2",
+		},
+		{
+			"build",
+			"missing",
+		},
+		{
+			"build",
+			"api-gateway",
+			"api-gateway",
+		},
+		{
+			"stop",
+			"extra",
+		},
+		{"logs"},
+		{"reset"},
+		{
+			"reset",
+			"--yes",
+			"extra",
+		},
+		{
+			"logs",
+			"api-gateway",
+			"--tail",
+			"-1",
+		},
+		{
+			"status",
+			"-o",
+			"yaml",
+		},
+		{
+			"up",
+			"--timeout",
+			"0s",
+		},
+	} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			f := &fakeFactory{
+				c: commandConfig(t),
+			}
+			cmd := NewScooterctlCommand(f, iostreams.IOStreams{
+				Out:    io.Discard,
+				ErrOut: io.Discard,
+			}, "test")
+			cmd.SetArgs(args)
+			if err := cmd.Execute(); err == nil {
+				t.Fatal("expected input error")
+			}
+			if f.calls != 0 {
+				t.Fatalf("invalid input created %d runtimes", f.calls)
+			}
+		})
+	}
+}
+
+type unavailableFactory struct{}
+
+func (unavailableFactory) Config() (config.Config, error) {
+	return config.Config{}, fmt.Errorf("project unavailable")
+}
+
+func (unavailableFactory) NewStand(config.Config, iostreams.IOStreams) (stand.Interface, error) {
+	panic("unexpected runtime")
+}
+
+func TestHelpAndVersionNeedNoProjectOrDocker(t *testing.T) {
+	for _, args := range [][]string{
+		{"--help"},
+		{"--version"},
+		{
+			"config",
+			"--help",
+		},
+		{
+			"config",
+			"set",
+			"--help",
+		},
+		{
+			"config",
+			"get",
+			"--help",
+		},
+		{
+			"build",
+			"--help",
+		},
+		{
+			"kubectl",
+			"--help",
+		},
+		{"kubectl"},
+	} {
+		var output bytes.Buffer
+		cmd := NewScooterctlCommand(unavailableFactory{}, iostreams.IOStreams{
+			Out:    &output,
+			ErrOut: io.Discard,
+		}, "1.2.3")
+		cmd.SetArgs(args)
+		if err := cmd.Execute(); err != nil {
+			t.Fatal(err)
+		}
+		if output.Len() == 0 {
+			t.Fatal("empty help/version")
+		}
+	}
+}
+
+func TestBuildSelectionAndDeadline(t *testing.T) {
+	f := &fakeFactory{
+		c:     commandConfig(t),
+		block: true,
+	}
+	cmd := NewScooterctlCommand(f, iostreams.IOStreams{
+		Out:    io.Discard,
+		ErrOut: io.Discard,
+	}, "test")
+	cmd.SetArgs([]string{
+		"build",
+		"api-gateway",
+		"--timeout",
+		"1ms",
+	})
+	if err := cmd.Execute(); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("got %v", err)
+	}
+	if len(f.built) != 1 || f.built[0].Name != "api-gateway" {
+		t.Fatalf("wrong selection: %v", f.built)
+	}
+}
+
+func (s *fakeStand) Reset(context.Context) error {
+	s.f.reset = true
+	return nil
+}
+
+func TestResetWithExplicitFlag(t *testing.T) {
+	f := &fakeFactory{c: commandConfig(t)}
+	cmd := NewScooterctlCommand(f, iostreams.IOStreams{
+		Out:    io.Discard,
+		ErrOut: io.Discard,
+	}, "test")
+	cmd.SetArgs([]string{
+		"reset",
+		"--yes",
+	})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !f.reset {
+		t.Fatal("сброс не вызван")
+	}
+}
+
+func (s *fakeStand) Control(_ context.Context, action string, components []config.Service) error {
+	s.f.action = action
+	s.f.components = components
+	return nil
+}
+
+func (s *fakeStand) Stop(context.Context) error {
+	s.f.wholeStop = true
+	return nil
+}
+
+func TestComponentCommandsDispatchWithoutChangingWholeStand(t *testing.T) {
+	for _, action := range []string{
+		"stop",
+		"start",
+		"restart",
+	} {
+		t.Run(action, func(t *testing.T) {
+			f := &fakeFactory{
+				c: commandConfig(t),
+			}
+			command := NewScooterctlCommand(f, iostreams.IOStreams{
+				Out:    io.Discard,
+				ErrOut: io.Discard,
+			}, "test")
+			command.SetArgs([]string{
+				action,
+				"kafka",
+				"rental",
+			})
+			if err := command.Execute(); err != nil {
+				t.Fatal(err)
+			}
+			if f.action != action || len(f.components) != 2 || f.components[0].Deployment != "rental-kafka" || f.wholeStop {
+				t.Fatalf("incorrect dispatch: %+v", f)
+			}
+		})
+	}
+	f := &fakeFactory{
+		c: commandConfig(t),
+	}
+	command := NewScooterctlCommand(f, iostreams.IOStreams{
+		Out:    io.Discard,
+		ErrOut: io.Discard,
+	}, "test")
+	command.SetArgs([]string{"stop"})
+	if err := command.Execute(); err != nil || !f.wholeStop {
+		t.Fatalf("whole-stand stop changed: %v", err)
+	}
+}
+
+func TestLocalAccessCommandsNeedNoDocker(t *testing.T) {
+	for _, name := range []string{
+		"components",
+		"access",
+		"hosts",
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := &fakeFactory{
+				c: commandConfig(t),
+			}
+			var out bytes.Buffer
+			command := NewScooterctlCommand(f, iostreams.IOStreams{
+				Out:    &out,
+				ErrOut: io.Discard,
+			}, "test")
+			command.SetArgs([]string{name})
+			if err := command.Execute(); err != nil || f.calls != 0 || out.Len() == 0 {
+				t.Fatalf("command failed or opened Docker: %v / %d", err, f.calls)
+			}
+		})
+	}
+}
+
+func TestNoBusinessCommands(t *testing.T) {
+	command := NewScooterctlCommand(&fakeFactory{c: commandConfig(t)}, iostreams.IOStreams{
+		Out:    io.Discard,
+		ErrOut: io.Discard,
+	}, "test")
+	for _, child := range command.Commands() {
+		if child.Name() == "smoke" || child.Name() == "scenario" {
+			t.Fatalf("business command included: %s", child.Name())
+		}
+	}
+}

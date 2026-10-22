@@ -1,0 +1,195 @@
+syntax = "proto3";
+
+package api_gateway.rental.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "api-gateway/internal/pkg/pb/api-gateway/rental/v1;rentalV1";
+
+// API области rental.
+service RentalService {
+  // Бронирует самокат; повтор ключа не создаёт новую аренду.
+  rpc ReserveRental(ReserveRentalRequest) returns (ReserveRentalResponse) {
+    option (google.api.http) = {
+      post: "/v1/rentals"
+      body: "*"
+    };
+  }
+
+  // Читает аренду своего пользователя.
+  rpc GetRental(GetRentalRequest) returns (GetRentalResponse) {
+    option (google.api.http) = {get: "/v1/rentals/{rental_id}"};
+  }
+
+  // Начинает забронированную поездку.
+  rpc StartRental(StartRentalRequest) returns (StartRentalResponse) {
+    option (google.api.http) = {
+      post: "/v1/rentals/{rental_id}:start"
+      body: "*"
+    };
+  }
+
+  // Завершает активную поездку; цена будет обновлена асинхронно.
+  rpc FinishRental(FinishRentalRequest) returns (FinishRentalResponse) {
+    option (google.api.http) = {
+      post: "/v1/rentals/{rental_id}:finish"
+      body: "*"
+    };
+  }
+
+  // Отменяет бронь до старта поездки.
+  rpc CancelRental(CancelRentalRequest) returns (CancelRentalResponse) {
+    option (google.api.http) = {
+      post: "/v1/rentals/{rental_id}:cancel"
+      body: "*"
+    };
+  }
+
+  // Возвращает аренды пользователя, включая завершённые.
+  rpc ListRentals(ListRentalsRequest) returns (ListRentalsResponse) {
+    option (google.api.http) = {get: "/v1/rentals"};
+  }
+}
+
+// Допустимые значения RentalStatus; UNSPECIFIED не является бизнес-значением.
+enum RentalStatus {
+  // UNSPECIFIED.
+  RENTAL_STATUS_UNSPECIFIED = 0;
+  // RESERVED.
+  RENTAL_STATUS_RESERVED = 1;
+  // ACTIVE.
+  RENTAL_STATUS_ACTIVE = 2;
+  // COMPLETED.
+  RENTAL_STATUS_COMPLETED = 3;
+  // CANCELED.
+  RENTAL_STATUS_CANCELED = 4;
+}
+
+// Rental: транспортное представление данных.
+message Rental {
+  // UUID аренды.
+  string id = 1;
+
+  // UUID пользователя.
+  string user_id = 2;
+
+  // UUID самоката.
+  string scooter_id = 3;
+
+  // Снимок номера при бронировании.
+  string scooter_number = 4;
+
+  // Снимок марки при бронировании.
+  string scooter_brand = 5;
+
+  // Состояние аренды.
+  RentalStatus status = 6;
+
+  // Фактическое время бронирования, RFC3339 UTC.
+  string reserved_at = 7;
+
+  // Время старта, RFC3339 UTC; отсутствует до начала.
+  optional string started_at = 8;
+
+  // Время завершения, RFC3339 UTC; отсутствует до завершения.
+  optional string finished_at = 9;
+
+  // Версия аренды, совпадающая с версией в её событии.
+  int64 version = 10;
+}
+
+// ReserveRentalRequest: параметры запроса.
+message ReserveRentalRequest {
+  // UUID пользователя.
+  string user_id = 1;
+
+  // UUID выбранного самоката.
+  string scooter_id = 2;
+
+  // UUID ключа; сохраняйте при повторе после сетевой ошибки.
+  string idempotency_key = 3;
+}
+
+// ReserveRentalResponse: результат операции.
+message ReserveRentalResponse {
+  // Сохранённая бронь; расчёт стоимости выполняется асинхронно.
+  Rental rental = 1;
+}
+
+// GetRentalRequest: параметры запроса.
+message GetRentalRequest {
+  // UUID аренды.
+  string rental_id = 1;
+
+  // UUID владельца аренды.
+  string user_id = 2;
+}
+
+// GetRentalResponse: результат операции.
+message GetRentalResponse {
+  // Текущее состояние аренды.
+  Rental rental = 1;
+}
+
+// StartRentalRequest: параметры запроса.
+message StartRentalRequest {
+  // UUID аренды.
+  string rental_id = 1;
+
+  // UUID владельца аренды.
+  string user_id = 2;
+}
+
+// StartRentalResponse: результат операции.
+message StartRentalResponse {
+  // Текущее состояние аренды.
+  Rental rental = 1;
+}
+
+// FinishRentalRequest: параметры запроса.
+message FinishRentalRequest {
+  // UUID аренды.
+  string rental_id = 1;
+
+  // UUID владельца аренды.
+  string user_id = 2;
+}
+
+// FinishRentalResponse: результат операции.
+message FinishRentalResponse {
+  // Текущее состояние аренды.
+  Rental rental = 1;
+}
+
+// CancelRentalRequest: параметры запроса.
+message CancelRentalRequest {
+  // UUID аренды.
+  string rental_id = 1;
+
+  // UUID владельца аренды.
+  string user_id = 2;
+}
+
+// CancelRentalResponse: результат операции.
+message CancelRentalResponse {
+  // Текущее состояние аренды.
+  Rental rental = 1;
+}
+
+// ListRentalsRequest: параметры запроса.
+message ListRentalsRequest {
+  // UUID пользователя.
+  string user_id = 1;
+
+  // Размер страницы: по умолчанию 20, максимум 100.
+  int32 limit = 2;
+
+  // Число пропускаемых строк; неотрицательное.
+  int32 offset = 3;
+}
+
+// ListRentalsResponse: результат операции.
+message ListRentalsResponse {
+  // Аренды пользователя в порядке UUID.
+  repeated Rental rentals = 1;
+}

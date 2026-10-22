@@ -1,0 +1,460 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api-gateway/rental/v1/rental.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "RentalService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/rentals": {
+      "get": {
+        "summary": "Возвращает аренды пользователя, включая завершённые.",
+        "operationId": "RentalService_ListRentals",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.rental.v1.ListRentalsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "description": "UUID пользователя.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "description": "Размер страницы: по умолчанию 20, максимум 100.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "offset",
+            "description": "Число пропускаемых строк; неотрицательное.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "RentalService"
+        ]
+      },
+      "post": {
+        "summary": "Бронирует самокат; повтор ключа не создаёт новую аренду.",
+        "operationId": "RentalService_ReserveRental",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.rental.v1.ReserveRentalResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "ReserveRentalRequest: параметры запроса.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api_gateway.rental.v1.ReserveRentalRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RentalService"
+        ]
+      }
+    },
+    "/v1/rentals/{rentalId}": {
+      "get": {
+        "summary": "Читает аренду своего пользователя.",
+        "operationId": "RentalService_GetRental",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.rental.v1.GetRentalResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "rentalId",
+            "description": "UUID аренды.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "userId",
+            "description": "UUID владельца аренды.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RentalService"
+        ]
+      }
+    },
+    "/v1/rentals/{rentalId}:cancel": {
+      "post": {
+        "summary": "Отменяет бронь до старта поездки.",
+        "operationId": "RentalService_CancelRental",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.rental.v1.CancelRentalResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "rentalId",
+            "description": "UUID аренды.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api_gateway.rental.v1.RentalService.CancelRentalBody"
+            }
+          }
+        ],
+        "tags": [
+          "RentalService"
+        ]
+      }
+    },
+    "/v1/rentals/{rentalId}:finish": {
+      "post": {
+        "summary": "Завершает активную поездку; цена будет обновлена асинхронно.",
+        "operationId": "RentalService_FinishRental",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.rental.v1.FinishRentalResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "rentalId",
+            "description": "UUID аренды.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api_gateway.rental.v1.RentalService.FinishRentalBody"
+            }
+          }
+        ],
+        "tags": [
+          "RentalService"
+        ]
+      }
+    },
+    "/v1/rentals/{rentalId}:start": {
+      "post": {
+        "summary": "Начинает забронированную поездку.",
+        "operationId": "RentalService_StartRental",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.rental.v1.StartRentalResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "rentalId",
+            "description": "UUID аренды.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api_gateway.rental.v1.RentalService.StartRentalBody"
+            }
+          }
+        ],
+        "tags": [
+          "RentalService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "api_gateway.rental.v1.CancelRentalResponse": {
+      "type": "object",
+      "properties": {
+        "rental": {
+          "$ref": "#/definitions/api_gateway.rental.v1.Rental",
+          "description": "Текущее состояние аренды."
+        }
+      },
+      "description": "CancelRentalResponse: результат операции."
+    },
+    "api_gateway.rental.v1.FinishRentalResponse": {
+      "type": "object",
+      "properties": {
+        "rental": {
+          "$ref": "#/definitions/api_gateway.rental.v1.Rental",
+          "description": "Текущее состояние аренды."
+        }
+      },
+      "description": "FinishRentalResponse: результат операции."
+    },
+    "api_gateway.rental.v1.GetRentalResponse": {
+      "type": "object",
+      "properties": {
+        "rental": {
+          "$ref": "#/definitions/api_gateway.rental.v1.Rental",
+          "description": "Текущее состояние аренды."
+        }
+      },
+      "description": "GetRentalResponse: результат операции."
+    },
+    "api_gateway.rental.v1.ListRentalsResponse": {
+      "type": "object",
+      "properties": {
+        "rentals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/api_gateway.rental.v1.Rental"
+          },
+          "description": "Аренды пользователя в порядке UUID."
+        }
+      },
+      "description": "ListRentalsResponse: результат операции."
+    },
+    "api_gateway.rental.v1.Rental": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID аренды."
+        },
+        "userId": {
+          "type": "string",
+          "description": "UUID пользователя."
+        },
+        "scooterId": {
+          "type": "string",
+          "description": "UUID самоката."
+        },
+        "scooterNumber": {
+          "type": "string",
+          "description": "Снимок номера при бронировании."
+        },
+        "scooterBrand": {
+          "type": "string",
+          "description": "Снимок марки при бронировании."
+        },
+        "status": {
+          "$ref": "#/definitions/api_gateway.rental.v1.RentalStatus",
+          "description": "Состояние аренды."
+        },
+        "reservedAt": {
+          "type": "string",
+          "description": "Фактическое время бронирования, RFC3339 UTC."
+        },
+        "startedAt": {
+          "type": "string",
+          "description": "Время старта, RFC3339 UTC; отсутствует до начала."
+        },
+        "finishedAt": {
+          "type": "string",
+          "description": "Время завершения, RFC3339 UTC; отсутствует до завершения."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Версия аренды, совпадающая с версией в её событии."
+        }
+      },
+      "description": "Rental: транспортное представление данных."
+    },
+    "api_gateway.rental.v1.RentalService.CancelRentalBody": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UUID владельца аренды."
+        }
+      },
+      "description": "CancelRentalRequest: параметры запроса."
+    },
+    "api_gateway.rental.v1.RentalService.FinishRentalBody": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UUID владельца аренды."
+        }
+      },
+      "description": "FinishRentalRequest: параметры запроса."
+    },
+    "api_gateway.rental.v1.RentalService.StartRentalBody": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UUID владельца аренды."
+        }
+      },
+      "description": "StartRentalRequest: параметры запроса."
+    },
+    "api_gateway.rental.v1.RentalStatus": {
+      "type": "string",
+      "enum": [
+        "RENTAL_STATUS_UNSPECIFIED",
+        "RENTAL_STATUS_RESERVED",
+        "RENTAL_STATUS_ACTIVE",
+        "RENTAL_STATUS_COMPLETED",
+        "RENTAL_STATUS_CANCELED"
+      ],
+      "default": "RENTAL_STATUS_UNSPECIFIED",
+      "description": "Допустимые значения RentalStatus; UNSPECIFIED не является бизнес-значением.\n\n - RENTAL_STATUS_UNSPECIFIED: UNSPECIFIED.\n - RENTAL_STATUS_RESERVED: RESERVED.\n - RENTAL_STATUS_ACTIVE: ACTIVE.\n - RENTAL_STATUS_COMPLETED: COMPLETED.\n - RENTAL_STATUS_CANCELED: CANCELED."
+    },
+    "api_gateway.rental.v1.ReserveRentalRequest": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UUID пользователя."
+        },
+        "scooterId": {
+          "type": "string",
+          "description": "UUID выбранного самоката."
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "description": "UUID ключа; сохраняйте при повторе после сетевой ошибки."
+        }
+      },
+      "description": "ReserveRentalRequest: параметры запроса."
+    },
+    "api_gateway.rental.v1.ReserveRentalResponse": {
+      "type": "object",
+      "properties": {
+        "rental": {
+          "$ref": "#/definitions/api_gateway.rental.v1.Rental",
+          "description": "Сохранённая бронь; расчёт стоимости выполняется асинхронно."
+        }
+      },
+      "description": "ReserveRentalResponse: результат операции."
+    },
+    "api_gateway.rental.v1.StartRentalResponse": {
+      "type": "object",
+      "properties": {
+        "rental": {
+          "$ref": "#/definitions/api_gateway.rental.v1.Rental",
+          "description": "Текущее состояние аренды."
+        }
+      },
+      "description": "StartRentalResponse: результат операции."
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "google.rpc.Status": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  }
+}

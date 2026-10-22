@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: scooterflow
+resources:
+  - namespace.yaml
+  - credentials.yaml
+  - rental-postgres.yaml
+  - pricing-postgres.yaml
+  - profile-postgres.yaml
+  - scooter-postgres.yaml
+  - kafka.yaml
+  - akhq.yaml
+  - config-etcd.yaml

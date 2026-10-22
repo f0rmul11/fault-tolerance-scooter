@@ -1,0 +1,14 @@
+version: v2
+modules:
+  - path: api
+lint:
+  use:
+    - STANDARD
+  except:
+    - PACKAGE_DIRECTORY_MATCH
+  ignore_only:
+    ENUM_VALUE_PREFIX:
+      - api/pricing/pricing/v1/pricing.proto
+breaking:
+  use:
+    - FILE

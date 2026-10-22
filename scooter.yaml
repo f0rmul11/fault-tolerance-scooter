@@ -1,0 +1,10 @@
+apiVersion: scooterflow/v1alpha1
+name: scooterflow
+runtime:
+  image: rancher/k3s:v1.35.2-k3s1
+services:
+  - api-gateway
+  - profile
+  - scooter
+  - rental
+  - pricing

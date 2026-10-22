@@ -1,0 +1,110 @@
+package config
+
+import (
+	"fmt"
+	"log"
+	"os"
+	"sync"
+
+	"github.com/ilyakaznacheev/cleanenv"
+)
+
+var (
+	instance *Config
+	once     sync.Once
+)
+
+func Instance() *Config {
+	once.Do(func() {
+		var err error
+		instance, err = Read()
+		if err != nil {
+			log.Fatalf("read config error: %s", err)
+		}
+	})
+	return instance
+}
+
+type Config struct {
+	Postgres     Postgres          `yaml:"postgres"`
+	Outbox       Outbox            `yaml:"outbox"`
+	KafkaBrokers []string          `yaml:"kafka_brokers" env:"KAFKA_BROKERS" env-separator:","`
+	Targets      map[string]string `yaml:"service"`
+	GrpcServer   GrpcServer        `yaml:"grpc_server"`
+	HttpServer   HttpServer        `yaml:"http_server"`
+	Graceful     Graceful          `yaml:"graceful"`
+	PostgresDSN  string            `yaml:"postgres_dsn" env:"POSTGRES_DSN"`
+}
+
+// Read загружает конфигурацию из YAML и применяет переменные окружения.
+func Read() (*Config, error) {
+	path := os.Getenv("CONFIG_PATH")
+	if path == "" {
+		path = "config/config.yaml"
+	}
+
+	cfg := &Config{}
+
+	if err := cleanenv.ReadConfig(path, cfg); err != nil {
+		return nil, fmt.Errorf("read config %s: %w", path, err)
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+func (c *Config) Validate() error {
+	if c.PostgresDSN == "" {
+		return fmt.Errorf("POSTGRES_DSN обязателен")
+	}
+
+	if len(c.KafkaBrokers) == 0 {
+		return fmt.Errorf("KAFKA_BROKERS обязателен")
+	}
+
+	if err := c.Postgres.Validate(); err != nil {
+		return err
+	}
+
+	if c.Outbox.Limits.LockedKeysLimit < 1 ||
+		c.Outbox.Limits.MessagesLimit < 1 ||
+		c.Outbox.Limits.MaxErrCountForMessage < 1 {
+		return fmt.Errorf("лимиты outbox должны быть положительными")
+	}
+
+	handler := c.OutboxConfig(RentalEventsTopic)
+	if handler.BatchSize < 1 || handler.Worker.Concurrency < 1 || handler.Worker.Interval <= 0 {
+		return fmt.Errorf("некорректные настройки обработчика outbox")
+	}
+
+	for name, port := range map[string]int{
+		"HTTP_PORT":       c.HttpServer.Port,
+		"GRPC_PORT":       c.GrpcServer.Port,
+		"ADMIN_HTTP_PORT": c.HttpServer.AdminPort,
+	} {
+		if port < 1 || port > 65535 {
+			return fmt.Errorf("%s must be between 1 and 65535", name)
+		}
+	}
+
+	if c.HttpServer.Port == c.GrpcServer.Port {
+		return fmt.Errorf("HTTP_PORT and GRPC_PORT must differ")
+	}
+
+	if c.HttpServer.AdminPort == c.HttpServer.Port || c.HttpServer.AdminPort == c.GrpcServer.Port {
+		return fmt.Errorf("ADMIN_HTTP_PORT must differ from HTTP_PORT and GRPC_PORT")
+	}
+
+	if c.Graceful.Timeout <= 0 {
+		return fmt.Errorf("graceful timeout must be positive")
+	}
+
+	return nil
+}
+
+func (c *Config) OutboxConfig(topic string) OutboxHandler {
+	return c.Outbox.Topics[topic]
+}

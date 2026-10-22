@@ -1,0 +1,261 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api-gateway/scooter/v1/scooter.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "ScooterService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/scooters": {
+      "get": {
+        "summary": "Читает страницу справочника.",
+        "operationId": "ScooterService_ListScooters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.scooter.v1.ListScootersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "description": "Размер страницы: по умолчанию 20, максимум 100.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "offset",
+            "description": "Число пропускаемых строк; неотрицательное.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "ScooterService"
+        ]
+      }
+    },
+    "/v1/scooters/{scooterId}": {
+      "get": {
+        "summary": "Читает карточку по UUID.",
+        "operationId": "ScooterService_GetScooter",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.scooter.v1.GetScooterResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "scooterId",
+            "description": "UUID запрашиваемой записи.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ScooterService"
+        ]
+      },
+      "patch": {
+        "summary": "Атомарно обновляет переданные поля с проверкой версии.",
+        "operationId": "ScooterService_UpdateScooter",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.scooter.v1.UpdateScooterResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "scooterId",
+            "description": "UUID изменяемой записи.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api_gateway.scooter.v1.ScooterService.UpdateScooterBody"
+            }
+          }
+        ],
+        "tags": [
+          "ScooterService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "api_gateway.scooter.v1.GetScooterResponse": {
+      "type": "object",
+      "properties": {
+        "scooter": {
+          "$ref": "#/definitions/api_gateway.scooter.v1.Scooter",
+          "description": "Найденная запись."
+        }
+      },
+      "description": "GetScooterResponse: результат операции."
+    },
+    "api_gateway.scooter.v1.ListScootersResponse": {
+      "type": "object",
+      "properties": {
+        "scooters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/api_gateway.scooter.v1.Scooter"
+          },
+          "description": "Страница записей в стабильном порядке UUID."
+        }
+      },
+      "description": "ListScootersResponse: результат операции."
+    },
+    "api_gateway.scooter.v1.Scooter": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID самоката; не совпадает с номером на корпусе."
+        },
+        "number": {
+          "type": "string",
+          "description": "Уникальный номер на корпусе."
+        },
+        "brand": {
+          "type": "string",
+          "description": "Марка самоката."
+        },
+        "chargePercent": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Заряд аккумулятора от 0 до 100 процентов."
+        },
+        "riddenSeconds": {
+          "type": "string",
+          "format": "int64",
+          "description": "Общий наезд в секундах; часы = секунды / 3600."
+        },
+        "version": {
+          "type": "string",
+          "format": "int64",
+          "description": "Версия записи."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Время обновления, RFC3339 UTC."
+        }
+      },
+      "description": "Scooter: транспортное представление данных."
+    },
+    "api_gateway.scooter.v1.ScooterService.UpdateScooterBody": {
+      "type": "object",
+      "properties": {
+        "expectedVersion": {
+          "type": "string",
+          "format": "int64",
+          "description": "Обязательная версия, прочитанная перед обновлением."
+        },
+        "number": {
+          "type": "string",
+          "description": "Новый номер; отсутствует — не менять."
+        },
+        "brand": {
+          "type": "string",
+          "description": "Новая марка; отсутствует — не менять."
+        },
+        "chargePercent": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Новый заряд 0–100%; отсутствие отличается от нуля."
+        },
+        "riddenSeconds": {
+          "type": "string",
+          "format": "int64",
+          "description": "Обновлённый наезд в секундах; уменьшение запрещено."
+        }
+      },
+      "description": "UpdateScooterRequest: параметры запроса."
+    },
+    "api_gateway.scooter.v1.UpdateScooterResponse": {
+      "type": "object",
+      "properties": {
+        "scooter": {
+          "$ref": "#/definitions/api_gateway.scooter.v1.Scooter",
+          "description": "Карточка после сохранения."
+        }
+      },
+      "description": "UpdateScooterResponse: результат операции."
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "google.rpc.Status": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  }
+}

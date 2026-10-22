@@ -1,0 +1,22 @@
+graceful:
+  timeout: 10s
+
+grpc_server:
+  port: 9090
+  max_connection_idle: 5m
+  max_connection_age: 30m
+  timeout: 5s
+  time: 2h
+
+http_server:
+  port: 8080
+  admin_port: 8081
+
+service: {}
+
+postgres_dsn: "postgres://scooter:scooter-local@scooter-postgres:5432/scooter?sslmode=disable"
+postgres:
+  max_connections: 10
+  min_connections: 0
+  max_idle_connections: 0
+  max_conn_lifetime: 1h

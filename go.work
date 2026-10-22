@@ -1,0 +1,13 @@
+go 1.26.1
+
+use (
+	./services/api-gateway
+	./services/profile
+	./services/scooter
+	./services/rental
+	./services/pricing
+	./scooterctl
+)
+
+// Clay requires the post-split root genproto module.
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20251103181224-f26f9409b101

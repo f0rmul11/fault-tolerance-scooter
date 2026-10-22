@@ -1,0 +1,293 @@
+asyncapi: 2.6.0
+channels:
+  rental.events.v1:
+    description: Kafka key = rental_id. Hash partitioner, 1 partition в базовом стенде.
+      Consumer group pricing-rental-events читает с oldest.
+    publish:
+      message:
+        oneOf:
+        - $ref: '#/components/messages/reserved'
+        - $ref: '#/components/messages/started'
+        - $ref: '#/components/messages/completed'
+        - $ref: '#/components/messages/canceled'
+      operationId: publishRentalLifecycle
+    subscribe:
+      message:
+        oneOf:
+        - $ref: '#/components/messages/reserved'
+        - $ref: '#/components/messages/started'
+        - $ref: '#/components/messages/completed'
+        - $ref: '#/components/messages/canceled'
+      operationId: priceRentalLifecycle
+components:
+  messages:
+    canceled:
+      bindings:
+        kafka:
+          bindingVersion: 0.5.0
+          key:
+            format: uuid
+            type: string
+      contentType: application/json
+      correlationId:
+        location: $message.header#/x-correlation-id
+      headers:
+        properties:
+          x-app-name:
+            enum:
+            - rental
+            type: string
+          x-correlation-id:
+            format: uuid
+            type: string
+          x-event-type:
+            type: string
+        required:
+        - x-correlation-id
+        - x-app-name
+        - x-event-type
+        type: object
+      name: rental.canceled.v1
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/RentalEnvelope'
+        - properties:
+            event_type:
+              enum:
+              - rental.canceled.v1
+            payload:
+              properties:
+                status:
+                  enum:
+                  - CANCELED
+              required: []
+              type: object
+            rental_version:
+              enum:
+              - 2
+          type: object
+      title: 'Аренда: CANCELED'
+    completed:
+      bindings:
+        kafka:
+          bindingVersion: 0.5.0
+          key:
+            format: uuid
+            type: string
+      contentType: application/json
+      correlationId:
+        location: $message.header#/x-correlation-id
+      headers:
+        properties:
+          x-app-name:
+            enum:
+            - rental
+            type: string
+          x-correlation-id:
+            format: uuid
+            type: string
+          x-event-type:
+            type: string
+        required:
+        - x-correlation-id
+        - x-app-name
+        - x-event-type
+        type: object
+      name: rental.completed.v1
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/RentalEnvelope'
+        - properties:
+            event_type:
+              enum:
+              - rental.completed.v1
+            payload:
+              properties:
+                status:
+                  enum:
+                  - COMPLETED
+              required:
+              - started_at
+              - finished_at
+              type: object
+            rental_version:
+              enum:
+              - 3
+          type: object
+      title: 'Аренда: COMPLETED'
+    reserved:
+      bindings:
+        kafka:
+          bindingVersion: 0.5.0
+          key:
+            format: uuid
+            type: string
+      contentType: application/json
+      correlationId:
+        location: $message.header#/x-correlation-id
+      headers:
+        properties:
+          x-app-name:
+            enum:
+            - rental
+            type: string
+          x-correlation-id:
+            format: uuid
+            type: string
+          x-event-type:
+            type: string
+        required:
+        - x-correlation-id
+        - x-app-name
+        - x-event-type
+        type: object
+      name: rental.reserved.v1
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/RentalEnvelope'
+        - properties:
+            event_type:
+              enum:
+              - rental.reserved.v1
+            payload:
+              properties:
+                status:
+                  enum:
+                  - RESERVED
+              required: []
+              type: object
+            rental_version:
+              enum:
+              - 1
+          type: object
+      title: 'Аренда: RESERVED'
+    started:
+      bindings:
+        kafka:
+          bindingVersion: 0.5.0
+          key:
+            format: uuid
+            type: string
+      contentType: application/json
+      correlationId:
+        location: $message.header#/x-correlation-id
+      headers:
+        properties:
+          x-app-name:
+            enum:
+            - rental
+            type: string
+          x-correlation-id:
+            format: uuid
+            type: string
+          x-event-type:
+            type: string
+        required:
+        - x-correlation-id
+        - x-app-name
+        - x-event-type
+        type: object
+      name: rental.started.v1
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/RentalEnvelope'
+        - properties:
+            event_type:
+              enum:
+              - rental.started.v1
+            payload:
+              properties:
+                status:
+                  enum:
+                  - ACTIVE
+              required:
+              - started_at
+              type: object
+            rental_version:
+              enum:
+              - 2
+          type: object
+      title: 'Аренда: ACTIVE'
+  schemas:
+    RentalEnvelope:
+      additionalProperties: false
+      properties:
+        correlation_id:
+          description: Стабильный ключ события; равен x-correlation-id.
+          format: uuid
+          type: string
+        event_type:
+          type: string
+        occurred_at:
+          format: date-time
+          type: string
+        payload:
+          $ref: '#/components/schemas/RentalPayload'
+        rental_id:
+          description: UUID аренды, равен Kafka key.
+          format: uuid
+          type: string
+        rental_version:
+          minimum: 1
+          type: integer
+        request_id:
+          description: ID запроса для трассировки, не ключ дедупликации.
+          format: uuid
+          type: string
+      required:
+      - correlation_id
+      - event_type
+      - rental_id
+      - rental_version
+      - occurred_at
+      - request_id
+      - payload
+      type: object
+    RentalPayload:
+      additionalProperties: false
+      description: Снимок аренды; идентичность события и версия находятся в envelope.
+      properties:
+        finished_at:
+          format: date-time
+          type: string
+        reserved_at:
+          format: date-time
+          type: string
+        scooter_brand:
+          type: string
+        scooter_id:
+          format: uuid
+          type: string
+        scooter_number:
+          type: string
+        started_at:
+          format: date-time
+          type: string
+        status:
+          enum:
+          - RESERVED
+          - ACTIVE
+          - COMPLETED
+          - CANCELED
+          type: string
+        user_id:
+          format: uuid
+          type: string
+      required:
+      - user_id
+      - scooter_id
+      - scooter_number
+      - scooter_brand
+      - status
+      - reserved_at
+      type: object
+info:
+  description: Один прикладной топик. Rental публикует через outbox, Pricing принимает
+    через inbox. Доставка at-least-once, ключ inbox (correlation_id, topic); порядок
+    применения защищён rental_version. Цена фиксируется при обработке reserved.
+  title: ScooterFlow Rental events
+  version: 1.0.0
+servers:
+  k3s:
+    protocol: kafka
+    url: kafka:9092

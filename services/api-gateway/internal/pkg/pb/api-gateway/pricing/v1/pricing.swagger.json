@@ -1,0 +1,237 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api-gateway/pricing/v1/pricing.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "PricingService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/pricing/tariffs": {
+      "get": {
+        "summary": "Читает цены за минуту и суммы авансов.",
+        "operationId": "PricingService_ListTariffs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.pricing.v1.ListTariffsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "tags": [
+          "PricingService"
+        ]
+      }
+    },
+    "/v1/pricing/trips/{rentalId}": {
+      "get": {
+        "summary": "Читает асинхронный результат расчёта поездки.",
+        "operationId": "PricingService_GetTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.pricing.v1.GetTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "rentalId",
+            "description": "UUID аренды.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "userId",
+            "description": "UUID владельца расчёта.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PricingService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "api_gateway.pricing.v1.GetTripResponse": {
+      "type": "object",
+      "properties": {
+        "trip": {
+          "$ref": "#/definitions/api_gateway.pricing.v1.Trip",
+          "description": "Расчёт; NotFound до обработки события бронирования."
+        }
+      },
+      "description": "GetTripResponse: результат операции."
+    },
+    "api_gateway.pricing.v1.ListTariffsResponse": {
+      "type": "object",
+      "properties": {
+        "tariffs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/api_gateway.pricing.v1.Tariff"
+          },
+          "description": "Действующие тарифы; существующие снимки поездок не меняются."
+        }
+      },
+      "description": "ListTariffsResponse: результат операции."
+    },
+    "api_gateway.pricing.v1.Tariff": {
+      "type": "object",
+      "properties": {
+        "plan": {
+          "type": "string",
+          "description": "Подписка BASE, PREMIUM или ULTRA."
+        },
+        "rateMinor": {
+          "type": "string",
+          "format": "int64",
+          "description": "Цена минуты в копейках RUB."
+        },
+        "advanceMinor": {
+          "type": "string",
+          "format": "int64",
+          "description": "Аванс за старт в копейках RUB."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Валюта RUB."
+        }
+      },
+      "description": "Tariff: транспортное представление данных."
+    },
+    "api_gateway.pricing.v1.Trip": {
+      "type": "object",
+      "properties": {
+        "rentalId": {
+          "type": "string",
+          "description": "UUID аренды, к которой относится расчёт."
+        },
+        "userId": {
+          "type": "string",
+          "description": "UUID пользователя."
+        },
+        "scooterId": {
+          "type": "string",
+          "description": "UUID самоката."
+        },
+        "plan": {
+          "type": "string",
+          "description": "Снимок подписки BASE, PREMIUM или ULTRA."
+        },
+        "rateMinor": {
+          "type": "string",
+          "format": "int64",
+          "description": "Цена минуты в копейках RUB."
+        },
+        "advanceMinor": {
+          "type": "string",
+          "format": "int64",
+          "description": "Сумма аванса в копейках RUB."
+        },
+        "chargedMinor": {
+          "type": "string",
+          "format": "int64",
+          "description": "Учтённое списание за вычетом возвратов в копейках."
+        },
+        "totalMinor": {
+          "type": "string",
+          "format": "int64",
+          "description": "Итоговая стоимость; отсутствует до завершения или отмены."
+        },
+        "adjustmentMinor": {
+          "type": "string",
+          "format": "int64",
+          "description": "Доплата (плюс) или возврат (минус) относительно аванса; отсутствует до расчёта."
+        },
+        "billedMinutes": {
+          "type": "string",
+          "format": "int64",
+          "description": "Начатые минуты; минимум одна после завершения."
+        },
+        "status": {
+          "$ref": "#/definitions/api_gateway.pricing.v1.TripStatus",
+          "description": "Состояние расчёта; обновляется асинхронно через Kafka."
+        },
+        "rentalVersion": {
+          "type": "string",
+          "format": "int64",
+          "description": "Последняя применённая версия аренды."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Валюта RUB."
+        }
+      },
+      "description": "Trip: транспортное представление данных."
+    },
+    "api_gateway.pricing.v1.TripStatus": {
+      "type": "string",
+      "enum": [
+        "TRIP_STATUS_UNSPECIFIED",
+        "TRIP_STATUS_RESERVED",
+        "TRIP_STATUS_ACTIVE",
+        "TRIP_STATUS_COMPLETED",
+        "TRIP_STATUS_CANCELED"
+      ],
+      "default": "TRIP_STATUS_UNSPECIFIED",
+      "description": "Допустимые значения TripStatus; UNSPECIFIED не является бизнес-значением.\n\n - TRIP_STATUS_UNSPECIFIED: UNSPECIFIED.\n - TRIP_STATUS_RESERVED: RESERVED.\n - TRIP_STATUS_ACTIVE: ACTIVE.\n - TRIP_STATUS_COMPLETED: COMPLETED.\n - TRIP_STATUS_CANCELED: CANCELED."
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "google.rpc.Status": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  }
+}

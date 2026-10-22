@@ -1,0 +1,135 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "ScooterFlow API Gateway",
+    "description": "Публичный API учебного стенда аренды самокатов ScooterFlow.",
+    "version": "1.0"
+  },
+  "tags": [
+    {
+      "name": "EchoService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/echo": {
+      "get": {
+        "summary": "Возвращает исходное сообщение для проверки доступности сервиса.",
+        "operationId": "EchoService_Echo2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.echo.v1.EchoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "message",
+            "description": "Произвольный текст, возвращаемый без изменений.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "EchoService"
+        ]
+      },
+      "post": {
+        "summary": "Возвращает исходное сообщение для проверки доступности сервиса.",
+        "operationId": "EchoService_Echo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.echo.v1.EchoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "Сообщение для проверки транспорта.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api_gateway.echo.v1.EchoRequest"
+            }
+          }
+        ],
+        "tags": [
+          "EchoService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "api_gateway.echo.v1.EchoRequest": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "Произвольный текст, возвращаемый без изменений."
+        }
+      },
+      "description": "Сообщение для проверки транспорта."
+    },
+    "api_gateway.echo.v1.EchoResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "Произвольный текст, возвращаемый без изменений."
+        }
+      },
+      "description": "Исходное сообщение и результат проверки транспорта."
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "google.rpc.Status": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  }
+}

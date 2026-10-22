@@ -1,0 +1,24 @@
+{
+  "version": "v2",
+  "clean": true,
+  "plugins": [
+    {
+      "local": "protoc-gen-go",
+      "out": "internal/pkg/pb/external",
+      "opt": "paths=source_relative"
+    },
+    {
+      "local": "protoc-gen-go-grpc",
+      "out": "internal/pkg/pb/external",
+      "opt": "paths=source_relative"
+    }
+  ],
+  "inputs": [
+    {
+      "directory": "../scooter/api",
+      "paths": [
+        "../scooter/api/scooter/scooter/v1/scooter.proto"
+      ]
+    }
+  ]
+}

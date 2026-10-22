@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package scooter.scooter.v1;
+
+option go_package = "scooter/internal/pkg/pb/scooter/scooter/v1;scooterV1";
+
+// API области scooter.
+service ScooterService {
+  // Читает карточку по UUID.
+  rpc GetScooter(GetScooterRequest) returns (GetScooterResponse);
+
+  // Читает страницу справочника.
+  rpc ListScooters(ListScootersRequest) returns (ListScootersResponse);
+
+  // Атомарно обновляет переданные поля с проверкой версии.
+  rpc UpdateScooter(UpdateScooterRequest) returns (UpdateScooterResponse);
+}
+
+// Scooter: транспортное представление данных.
+message Scooter {
+  // UUID самоката; не совпадает с номером на корпусе.
+  string id = 1;
+
+  // Уникальный номер на корпусе.
+  string number = 2;
+
+  // Марка самоката.
+  string brand = 3;
+
+  // Заряд аккумулятора от 0 до 100 процентов.
+  int32 charge_percent = 4;
+
+  // Общий наезд в секундах; часы = секунды / 3600.
+  int64 ridden_seconds = 5;
+
+  // Версия записи.
+  int64 version = 6;
+
+  // Время обновления, RFC3339 UTC.
+  string updated_at = 7;
+}
+
+// GetScooterRequest: параметры запроса.
+message GetScooterRequest {
+  // UUID запрашиваемой записи.
+  string scooter_id = 1;
+}
+
+// GetScooterResponse: результат операции.
+message GetScooterResponse {
+  // Найденная запись.
+  Scooter scooter = 1;
+}
+
+// ListScootersRequest: параметры запроса.
+message ListScootersRequest {
+  // Размер страницы: по умолчанию 20, максимум 100.
+  int32 limit = 1;
+
+  // Число пропускаемых строк; неотрицательное.
+  int32 offset = 2;
+}
+
+// ListScootersResponse: результат операции.
+message ListScootersResponse {
+  // Страница записей в стабильном порядке UUID.
+  repeated Scooter scooters = 1;
+}
+
+// UpdateScooterRequest: параметры запроса.
+message UpdateScooterRequest {
+  // UUID изменяемой записи.
+  string scooter_id = 1;
+
+  // Обязательная версия, прочитанная перед обновлением.
+  int64 expected_version = 2;
+
+  // Новый номер; отсутствует — не менять.
+  optional string number = 3;
+
+  // Новая марка; отсутствует — не менять.
+  optional string brand = 4;
+
+  // Новый заряд 0–100%; отсутствие отличается от нуля.
+  optional int32 charge_percent = 5;
+
+  // Обновлённый наезд в секундах; уменьшение запрещено.
+  optional int64 ridden_seconds = 6;
+}
+
+// UpdateScooterResponse: результат операции.
+message UpdateScooterResponse {
+  // Карточка после сохранения.
+  Scooter scooter = 1;
+}
