@@ -10,6 +10,7 @@ FROM scratch AS release
 WORKDIR /app
 COPY --from=builder /pricing /pricing
 COPY config/config.yaml /app/config/config.yaml
+COPY tariffs.json /app/tariffs.json
 USER 65532:65532
 EXPOSE 8081 9090
 ENTRYPOINT ["/pricing"]

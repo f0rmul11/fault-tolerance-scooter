@@ -2,60 +2,80 @@ package tariff
 
 import (
 	"context"
-	"errors"
-
-	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5"
+	"encoding/json"
+	"os"
+	"sync"
+	"time"
 
 	"pricing/internal/dto/tariff"
 	"pricing/internal/infrastructure/storage/tariff/dao"
-	app "pricing/internal/pkg/pricingerror"
-	"pricing/internal/pkg/transaction/wrapper"
 )
 
 type Storage struct {
-	db wrapper.Database
+	mtx     sync.RWMutex
+	tariffs map[string]dao.Tariff
 }
 
-func New(db wrapper.Database) *Storage {
-	return &Storage{db: db}
+func NewStorage() *Storage {
+	return &Storage{}
 }
 
-func (s *Storage) Get(ctx context.Context, plan string) (tariff.Tariff, error) {
-	const query = `
-	select *
-	from public.tariffs
-	where plan = $1
-	`
-	var row dao.Tariff
-	if err := pgxscan.Get(
-		ctx,
-		s.db.Pool(ctx),
-		&row,
-		query,
-		plan,
-	); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return tariff.Tariff{}, app.NewNotFoundErr("Тариф не найден", err)
-		}
-		return tariff.Tariff{}, err
-	}
-	return row.ConvertTo(), nil
+func (s *Storage) IsLoaded() bool {
+	s.mtx.RLock()
+	defer s.mtx.RUnlock()
+	return len(s.tariffs) != 0
 }
 
-func (s *Storage) List(ctx context.Context) ([]tariff.Tariff, error) {
-	const query = `
-	select *
-	from public.tariffs
-	order by plan
-	`
-	var rows []dao.Tariff
-	if err := pgxscan.Select(ctx, s.db.Pool(ctx), &rows, query); err != nil {
-		return nil, err
+func (s *Storage) LoadTariffs(_ context.Context, filePath string) error {
+	// Имитация тяжёлой загрузки.
+	time.Sleep(30 * time.Second)
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
 	}
-	result := make([]tariff.Tariff, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, row.ConvertTo())
+
+	var result struct {
+		Tariffs []dao.Tariff `json:"tariffs"`
 	}
-	return result, nil
+	if err = json.Unmarshal(data, &result); err != nil {
+		return err
+	}
+
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	s.tariffs = make(map[string]dao.Tariff, len(result.Tariffs))
+	for _, item := range result.Tariffs {
+		s.tariffs[item.Plan] = item
+	}
+	return nil
+}
+
+func (s *Storage) Get(_ context.Context, plan string) (tariff.Tariff, error) {
+	s.mtx.RLock()
+	item := s.tariffs[plan]
+	s.mtx.RUnlock()
+
+	return tariff.Tariff{
+		Plan:         item.Plan,
+		RateMinor:    item.RateMinor,
+		AdvanceMinor: item.AdvanceMinor,
+	}, nil
+}
+
+func (s *Storage) List(_ context.Context) ([]tariff.Tariff, error) {
+	var tariffs []tariff.Tariff
+
+	s.mtx.RLock()
+	for _, item := range s.tariffs {
+		tariffs = append(tariffs, tariff.Tariff{
+			Plan:         item.Plan,
+			RateMinor:    item.RateMinor,
+			AdvanceMinor: item.AdvanceMinor,
+		})
+	}
+	s.mtx.RUnlock()
+
+	return tariffs, nil
 }

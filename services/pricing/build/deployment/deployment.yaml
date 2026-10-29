@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/name: pricing
     app.kubernetes.io/part-of: scooterflow
 spec:
-  replicas: 1
+  replicas: 3
   revisionHistoryLimit: 3
   strategy:
     type: RollingUpdate
@@ -40,6 +40,10 @@ spec:
             - name: admin
               containerPort: 8081
           env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: GRPC_PORT
               value: "9090"
             - name: ADMIN_HTTP_PORT

@@ -81,6 +81,14 @@ func New(ctx context.Context) *App {
 	if err := app.init(ctx); err != nil {
 		log.Fatalf("[APP] Не удалось инициализировать приложение: %s", err.Error())
 	}
+	// Файл загружается в фоне: сервер стартует раньше готовности справочника.
+	go func() {
+		if err := app.storage.Tariffs.LoadTariffs(ctx, config.Instance().TariffsFile); err != nil {
+			slog.Error("Не удалось загрузить тарифы", "error", err)
+			return
+		}
+		slog.Info("Тарифы загружены")
+	}()
 	return app
 }
 

@@ -17,6 +17,6 @@ func NewRegistry(pool *pgxpool.Pool) *Registry {
 	db := wrapper.NewDatabase(pool)
 	return &Registry{
 		Trips:   pricing.New(db),
-		Tariffs: tariff.New(db),
+		Tariffs: tariff.NewStorage(),
 	}
 }

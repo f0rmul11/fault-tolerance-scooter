@@ -1,0 +1,19 @@
+{
+  "tariffs": [
+    {
+      "plan": "BASE",
+      "rate_minor": 1000,
+      "advance_minor": 5000
+    },
+    {
+      "plan": "PREMIUM",
+      "rate_minor": 700,
+      "advance_minor": 3000
+    },
+    {
+      "plan": "ULTRA",
+      "rate_minor": 400,
+      "advance_minor": 1000
+    }
+  ]
+}
