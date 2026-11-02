@@ -6,6 +6,7 @@ import (
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/pkg/cmd/build"
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/pkg/cmd/component"
 	configcmd "github.com/f0rmul11/fault-tolerance-scooter/scooterctl/pkg/cmd/config"
+	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/pkg/cmd/cordon"
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/pkg/cmd/deploy"
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/pkg/cmd/destroy"
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/pkg/cmd/doctor"
@@ -44,6 +45,8 @@ func NewScooterctlCommand(f util.Factory, streams iostreams.IOStreams, version s
 	command.SetErr(streams.ErrOut)
 	command.AddCommand(up.NewCmdUp(f, streams))
 	command.AddCommand(homework.New(f, streams))
+	command.AddCommand(cordon.New(f, streams, true))
+	command.AddCommand(cordon.New(f, streams, false))
 	command.AddCommand(fault.NewCmdFault(f, streams))
 	command.AddCommand(load.NewCmdLoad(f, streams))
 	command.AddCommand(build.NewCmdBuild(f, streams))

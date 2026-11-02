@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/kube"
-	core "k8s.io/api/core/v1"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"text/tabwriter"
 	"time"
 
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/iostreams"
+	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/kube"
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/pkg/cmd/util"
 	"github.com/spf13/cobra"
+	core "k8s.io/api/core/v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type StatusOptions struct {
@@ -99,7 +99,7 @@ func (o *StatusOptions) pods(ctx context.Context, name string) error {
 		}
 		fmt.Fprintf(o.Out, "\n%s — %s\n", name, time.Now().Format("15:04:05"))
 		w := tabwriter.NewWriter(o.Out, 0, 4, 2, ' ', 0)
-		fmt.Fprintln(w, "POD\tSTATUS\tREADY\tRESTARTS\tREADINESS")
+		fmt.Fprintln(w, "POD\tSTATUS\tLIVE\tREADY\tRESTARTS\tREADINESS")
 		for _, pod := range pods.Items {
 			ready := false
 			var restarts int32
@@ -126,7 +126,18 @@ func (o *StatusOptions) pods(ctx context.Context, name string) error {
 			} else if probeErr != nil {
 				details = "admin недоступен"
 			}
-			fmt.Fprintf(w, "%s\t%s\t%t\t%d\t%s\n", pod.Name, phase, ready, restarts, details)
+			liveCtx, liveCancel := context.WithTimeout(ctx, time.Second)
+			var liveCode int
+			result := client.Typed.CoreV1().RESTClient().Get().Namespace(namespace).Resource("pods").Name(pod.Name + ":8081").SubResource("proxy").Suffix("healthcheck/live").Do(liveCtx)
+			result.StatusCode(&liveCode)
+			liveCancel()
+			live := "unknown"
+			if liveCode >= 200 && liveCode < 300 {
+				live = "true"
+			} else if liveCode == 503 {
+				live = "false"
+			}
+			fmt.Fprintf(w, "%s\t%s\t%s\t%t\t%d\t%s\n", pod.Name, phase, live, ready, restarts, details)
 		}
 		if err := w.Flush(); err != nil {
 			return err

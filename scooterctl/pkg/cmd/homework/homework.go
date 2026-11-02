@@ -39,8 +39,8 @@ type check struct {
 func New(f util.Factory, streams iostreams.IOStreams) *cobra.Command {
 	root := &cobra.Command{Use: "homework", Short: "Проверки домашних заданий"}
 	module := &cobra.Command{Use: "module-2"}
-	run := &cobra.Command{Use: "run readiness|shutdown|cordon", Args: cobra.ExactArgs(1), RunE: func(command *cobra.Command, args []string) error {
-		if args[0] != "readiness" && args[0] != "shutdown" && args[0] != "cordon" {
+	run := &cobra.Command{Use: "run readiness|shutdown", Args: cobra.ExactArgs(1), RunE: func(command *cobra.Command, args []string) error {
+		if args[0] != "readiness" && args[0] != "shutdown" {
 			return fmt.Errorf("неизвестный сценарий %q", args[0])
 		}
 		cfg, err := f.Config()
@@ -65,8 +65,6 @@ func New(f util.Factory, streams iostreams.IOStreams) *cobra.Command {
 			err = r.readiness(ctx, cfg.Runtime.Ports.HTTP)
 		case "shutdown":
 			err = r.shutdown(ctx)
-		case "cordon":
-			err = r.cordon(ctx)
 		}
 		if err != nil {
 			r.record("Сценарий завершён", false, err.Error())
@@ -287,14 +285,14 @@ func (r *runner) readiness(ctx context.Context, port int) error {
 	r.record("Rollout завершился", completed, "все новые реплики готовы, старые удалены")
 	r.record("Тарифы при rollout", counts["full"] > 0 && counts["empty"] == 0 && counts["error"] == 0, fmt.Sprint(counts))
 	r.record("Новая реплика ждала готовности", observedWarming, "наблюдение Pod Ready")
-	return r.isolated(ctx, "missing-file", false)
+	return r.isolated(ctx, "missing-file")
 }
 func (r *runner) recordRestarts(p core.Pod) {
 	if restarts(p) > 0 {
 		r.record("Без перезапусков", false, p.Name)
 	}
 }
-func (r *runner) isolated(ctx context.Context, mode string, cordoned bool) error {
+func (r *runner) isolated(ctx context.Context, mode string) error {
 	fmt.Fprintln(r.out, "Изолированная проверка:", mode)
 	d, err := r.client.Typed.AppsV1().Deployments(namespace).Get(ctx, "pricing", meta.GetOptions{})
 	if err != nil {
@@ -320,14 +318,6 @@ func (r *runner) isolated(ctx context.Context, mode string, cordoned bool) error
 	}); err != nil {
 		return err
 	}
-	if cordoned {
-		code, _ := r.admin(ctx, pod.Name, "uncordon", "POST")
-		r.record("Uncordon во время прогрева доступен", code == 200, fmt.Sprint(code))
-		code, _ = r.admin(ctx, pod.Name, "healthcheck/ready", "GET")
-		r.record("Uncordon не отменяет прогрев", code == 503, fmt.Sprint(code))
-		code, _ = r.admin(ctx, pod.Name, "cordon", "POST")
-		r.record("Cordon во время прогрева", code == 200, fmt.Sprint(code))
-	}
 	if err := wait(ctx, 35*time.Second); err != nil {
 		return err
 	}
@@ -339,13 +329,6 @@ func (r *runner) isolated(ctx context.Context, mode string, cordoned bool) error
 	}
 	live, _ := r.admin(ctx, pod.Name, "healthcheck/live", "GET")
 	r.record("Liveness при "+mode, live == 200, fmt.Sprint(live))
-	if mode == "missing-file" {
-		status, _ := r.admin(ctx, pod.Name, "uncordon", "POST")
-		if status == 200 {
-			code, _ = r.admin(ctx, pod.Name, "healthcheck/ready", "GET")
-			r.record("Uncordon не отменяет ошибку файла", code == 503, fmt.Sprint(code))
-		}
-	}
 	p, err := r.client.Typed.CoreV1().Pods(namespace).Get(ctx, pod.Name, meta.GetOptions{})
 	if err != nil {
 		return err
@@ -407,81 +390,4 @@ func (r *runner) shutdown(ctx context.Context) error {
 	fmt.Fprintln(r.out, "Журнал остановки:")
 	fmt.Fprint(r.out, logs.String())
 	return nil
-}
-func (r *runner) cordon(ctx context.Context) error {
-	fmt.Fprintln(r.out, "Ожидание готовых реплик и загруженных тарифов…")
-	if err := r.settled(ctx); err != nil {
-		return err
-	}
-	pods, _ := r.pods(ctx)
-	p := pods[0]
-	defer r.admin(context.Background(), p.Name, "uncordon", "POST")
-	for i := 0; i < 2; i++ {
-		code, _ := r.admin(ctx, p.Name, "cordon", "POST")
-		r.record("POST /cordon", code == 200, fmt.Sprint(code))
-	}
-	code, _ := r.admin(ctx, p.Name, "healthcheck/ready", "GET")
-	r.record("Cordon снимает readiness", code == 503, fmt.Sprint(code))
-	code, _ = r.admin(ctx, p.Name, "healthcheck/live", "GET")
-	r.record("Cordon сохраняет liveness", code == 200, fmt.Sprint(code))
-	if err := wait(ctx, 7*time.Second); err != nil {
-		return err
-	}
-	routed := map[string]int{}
-	trafficOK := true
-	for i := 0; i < 30; i++ {
-		name, data, err := r.rpc(ctx)
-		if err != nil || len(data) == 0 || name == "" || name == p.Name {
-			trafficOK = false
-		}
-		routed[name]++
-	}
-	fmt.Fprintln(r.out, "Распределение новых соединений (pod → запросы):", routed)
-	r.record("Новые соединения обходят cordon", trafficOK, fmt.Sprint(routed))
-	endpoints, err := r.client.Typed.DiscoveryV1().EndpointSlices(namespace).List(ctx, meta.ListOptions{LabelSelector: "kubernetes.io/service-name=pricing"})
-	if err != nil {
-		return err
-	}
-	excluded := true
-	for _, slice := range endpoints.Items {
-		for _, ep := range slice.Endpoints {
-			if ep.TargetRef != nil && ep.TargetRef.Name == p.Name && (ep.Conditions.Ready == nil || *ep.Conditions.Ready) {
-				excluded = false
-			}
-		}
-	}
-	r.record("Pod исключён из готовых адресов", excluded, p.Name)
-	for i := 0; i < 2; i++ {
-		code, _ = r.admin(ctx, p.Name, "uncordon", "POST")
-		r.record("POST /uncordon", code == 200, fmt.Sprint(code))
-	}
-	code, _ = r.admin(ctx, p.Name, "healthcheck/ready", "GET")
-	r.record("Uncordon возвращает готовность", code == 200, fmt.Sprint(code))
-	if err := wait(ctx, 7*time.Second); err != nil {
-		return err
-	}
-	returned := false
-	for i := 0; i < 40; i++ {
-		name, _, err := r.rpc(ctx)
-		if err == nil && name == p.Name {
-			returned = true
-		}
-	}
-	r.record("Pod снова получает новые соединения", returned, p.Name)
-	after, err := r.client.Typed.CoreV1().Pods(namespace).Get(ctx, p.Name, meta.GetOptions{})
-	if err != nil {
-		return err
-	}
-	r.record("Состояние экземпляра сохранено", after.UID == p.UID && restarts(*after) == restarts(p), p.Name)
-	for _, other := range pods {
-		if other.UID == p.UID {
-			continue
-		}
-		current, err := r.client.Typed.CoreV1().Pods(namespace).Get(ctx, other.Name, meta.GetOptions{})
-		r.record("Другой Pod не затронут", err == nil && current.UID == other.UID && ready(*current), other.Name)
-	}
-	if err := r.isolated(ctx, "cordon-warmup", true); err != nil {
-		return err
-	}
-	return r.isolated(ctx, "missing-file", false)
 }
