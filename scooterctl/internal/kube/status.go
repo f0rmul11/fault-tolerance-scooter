@@ -9,6 +9,8 @@ import (
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/config"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 type ServiceStatus struct {
@@ -69,7 +71,16 @@ func (c *Client) Logs(ctx context.Context, s config.Service, follow bool, tail i
 	})
 	pod := pods.Items[0]
 	fmt.Fprintf(out, "Pod: %s\n", pod.Name)
-	stream, err := c.Typed.CoreV1().Pods(s.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+	logsClient := c.Typed
+	if follow && c.REST != nil {
+		cfg := rest.CopyConfig(c.REST)
+		cfg.Timeout = 0
+		logsClient, err = kubernetes.NewForConfig(cfg)
+		if err != nil {
+			return err
+		}
+	}
+	stream, err := logsClient.CoreV1().Pods(s.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
 		Follow:    follow,
 		TailLines: &tail,
 	}).Stream(ctx)

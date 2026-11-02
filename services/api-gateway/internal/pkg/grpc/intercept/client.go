@@ -1,6 +1,7 @@
 package intercept
 
 import (
+	"api-gateway/internal/pkg/requestid"
 	"context"
 
 	"google.golang.org/grpc"
@@ -12,8 +13,14 @@ import (
 // ProxyMetadata сохраняет заголовки и trailers владельца без повторного разбора его ошибок.
 func ProxyMetadata() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, request, reply any, conn *grpc.ClientConn, invoke grpc.UnaryInvoker, options ...grpc.CallOption) error {
+		if id := requestid.FromContext(ctx); id != "" {
+			md, _ := metadata.FromOutgoingContext(ctx)
+			md = md.Copy()
+			md.Set("x-request-id", id)
+			ctx = metadata.NewOutgoingContext(ctx, md)
+		}
 		var headers, trailers metadata.MD
-		options = append(options, grpc.Header(&headers), grpc.Trailer(&trailers))
+		options = append(append([]grpc.CallOption(nil), options...), grpc.Header(&headers), grpc.Trailer(&trailers))
 		err := invoke(ctx, method, request, reply, conn, options...)
 		_ = grpc.SetHeader(ctx, headers)
 		_ = grpc.SetTrailer(ctx, trailers)

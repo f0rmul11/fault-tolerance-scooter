@@ -1,0 +1,150 @@
+diff --git a/cmd/framer/cmd_load.go b/cmd/framer/cmd_load.go
+index c622cf4..40d8c42 100644
+--- a/cmd/framer/cmd_load.go
++++ b/cmd/framer/cmd_load.go
+@@ -15,7 +15,6 @@ import (
+ 	"go.uber.org/zap"
+ 	"golang.org/x/sync/errgroup"
+ 
+-	"github.com/ozontech/framer/consts"
+ 	"github.com/ozontech/framer/datasource"
+ 	"github.com/ozontech/framer/loader"
+ 	"github.com/ozontech/framer/loader/types"
+@@ -86,9 +85,10 @@ type DurationLimit struct {
+ }
+ 
+ type LoadCommand struct {
+-	Addr          string   `required:"" help:"Address of system under test"`
+-	RequestsFile  *os.File `required:"" help:"File of requests in ozon.binary format (see convert command to generate)"`
+-	InmemRequests bool     `help:"Load whole requests file in memory."`
++	RequestTimeout time.Duration `default:"3s" help:"Deadline of one request; sent in grpc-timeout metadata."`
++	Addr           string        `required:"" help:"Address of system under test"`
++	RequestsFile   *os.File      `required:"" help:"File of requests in ozon.binary format (see convert command to generate)"`
++	InmemRequests  bool          `help:"Load whole requests file in memory."`
+ 
+ 	Clients int    `default:"1" help:"Clients count."`
+ 	Phout   string `help:"Phout report file." type:"path"`
+@@ -111,9 +111,9 @@ func (c *LoadCommand) Run(
+ 		addr    = c.Addr
+ 	)
+ 
+-	var dataSource types.DataSource = datasource.NewFileDataSource(datasource.NewCyclicReader(c.RequestsFile))
++	var dataSource types.DataSource = datasource.NewFileDataSource(datasource.NewCyclicReader(c.RequestsFile), datasource.WithTimeout(c.RequestTimeout))
+ 	if c.InmemRequests {
+-		inmemDS := datasource.NewInmemDataSource(c.RequestsFile)
++		inmemDS := datasource.NewInmemDataSource(c.RequestsFile, datasource.WithTimeout(c.RequestTimeout))
+ 		err = inmemDS.Init()
+ 		if err != nil {
+ 			return fmt.Errorf("inmem datasource init: %w", err)
+@@ -143,7 +143,10 @@ func (c *LoadCommand) Run(
+ 	}
+ 	g.Go(reporter.Run)
+ 
+-	timeout := consts.DefaultTimeout
++	timeout := c.RequestTimeout
++	if timeout <= 0 {
++		return fmt.Errorf("request-timeout must be positive")
++	}
+ 	loaders := make([]*loader.Loader, clients)
+ 	for i := 0; i < clients; i++ {
+ 		conn, err := createConn(ctx, timeout, addr)
+diff --git a/cmd/framer/main.go b/cmd/framer/main.go
+index 787d4fd..e6141d4 100644
+--- a/cmd/framer/main.go
++++ b/cmd/framer/main.go
+@@ -4,8 +4,6 @@ import (
+ 	"context"
+ 	"fmt"
+ 	"math"
+-	"net/http"
+-	_ "net/http/pprof" //nolint:gosec
+ 	"runtime/debug"
+ 
+ 	"github.com/alecthomas/kong"
+@@ -34,18 +32,6 @@ func main() {
+ 	ctx, cancel := context.WithCancel(context.Background())
+ 	defer cancel()
+ 
+-	go func() {
+-		// runtime.SetBlockProfileRate(1)
+-		http.ListenAndServe(":8081", nil) //nolint:errcheck,gosec
+-	}()
+-
+-	// sigs := make(chan os.Signal, 1)
+-	// signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+-	// go func() {
+-	// 	<-sigs
+-	// 	cancel()
+-	// }()
+-
+ 	kongCtx := kong.Parse(
+ 		&CLI,
+ 		kong.BindTo(ctx, (*context.Context)(nil)),
+diff --git a/loader/loader.go b/loader/loader.go
+index bfdc916..f85f1dc 100644
+--- a/loader/loader.go
++++ b/loader/loader.go
+@@ -34,10 +34,11 @@ type TimeoutQueue interface {
+ }
+ 
+ type Loader struct {
+-	conn         net.Conn
+-	streamsPool  *streamsPool.StreamsPool
+-	streamsStore types.StreamStore
+-	timeoutQueue TimeoutQueue
++	conn           net.Conn
++	streamsPool    *streamsPool.StreamsPool
++	streamsStore   types.StreamStore
++	timeoutQueue   TimeoutQueue
++	requestTimeout time.Duration
+ 
+ 	sender   *sender.Sender
+ 	reciever *reciever.Reciever
+@@ -139,10 +140,11 @@ func newLoader(
+ 		}),
+ 	}
+ 	return &Loader{
+-		conn:         conn,
+-		timeoutQueue: timeoutQueue,
+-		log:          log,
+-		loaderID:     loaderID,
++		conn:           conn,
++		timeoutQueue:   timeoutQueue,
++		requestTimeout: conf.timeout,
++		log:            log,
++		loaderID:       loaderID,
+ 
+ 		streamsStore: streams.Store,
+ 
+@@ -193,7 +195,7 @@ func (l *Loader) WaitResponses(ctx context.Context) {
+ 	select {
+ 	case <-l.streamsPool.WaitAllReleased():
+ 		l.log.Debug("all streams released")
+-	case <-time.After(5 * time.Second):
++	case <-time.After(l.requestTimeout + time.Second):
+ 		println(l.loaderID)
+ 		l.streamsStore.Each(func(stream types.Stream) {
+ 			println(stream.ID())
+diff --git a/report/phout/phout.go b/report/phout/phout.go
+index e270dfc..cf0e1c6 100644
+--- a/report/phout/phout.go
++++ b/report/phout/phout.go
+@@ -38,6 +38,9 @@ func (r *Reporter) Run() error {
+ 		if err != nil {
+ 			return fmt.Errorf("write: %w", err)
+ 		}
++		if err := r.w.Flush(); err != nil {
++			return err
++		}
+ 		r.pool.Release(s)
+ 	}
+ 	return r.w.Flush()
+@@ -141,7 +144,7 @@ func (s *streamState) result() []byte {
+ 	s.reportLine = s.reportLine[:0]
+ 	s.reportLine = strconv.AppendInt(s.reportLine, s.startTime.Unix(), 10)
+ 	s.reportLine = append(s.reportLine, '.')
+-	s.reportLine = strconv.AppendInt(s.reportLine, int64(s.startTime.Nanosecond()/1e6), 10)
++	s.reportLine = fmt.Appendf(s.reportLine, "%03d", s.startTime.Nanosecond()/1e6)
+ 	s.reportLine = append(s.reportLine, tabChar)
+ 	s.reportLine = append(s.reportLine, []byte(s.tag)...)
+ 	s.reportLine = append(s.reportLine, tabChar)

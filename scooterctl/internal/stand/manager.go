@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/config"
+	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/fault"
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/iostreams"
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/project"
 )
@@ -28,6 +29,7 @@ type Runtime interface {
 
 // Interface is consumed by commands; implementations never depend on Cobra.
 type Interface interface {
+	Fault(context.Context, fault.Options) error
 	Close() error
 	Up(context.Context, []config.Service) error
 	Build(context.Context, []config.Service) error

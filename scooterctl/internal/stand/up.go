@@ -128,6 +128,16 @@ func (m *Manager) deploy(
 			return err
 		}
 	}
+	envoy, err := kube.RenderEnvoy(m.Config)
+	if err != nil {
+		return err
+	}
+	if err = client.Apply(ctx, envoy, m.Streams.Out); err != nil {
+		return err
+	}
+	if err = client.WaitDeployment(ctx, kube.EnvoyService()); err != nil {
+		return err
+	}
 	if kube.NeedsDependencies(services) {
 		resources, err := kube.RenderDependencies(m.Config.Root)
 		if err != nil {

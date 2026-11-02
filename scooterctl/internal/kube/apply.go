@@ -47,6 +47,9 @@ func Render(root string, s config.Service, image string) ([]*unstructured.Unstru
 		replaceImage(object.Object, s.Image, image)
 		configureNodePorts(object, s)
 		configureRuntime(object, s)
+		if err := configureEnvoyTargets(object, s); err != nil {
+			return nil, err
+		}
 		objects = append(objects, object)
 	}
 	return objects, nil

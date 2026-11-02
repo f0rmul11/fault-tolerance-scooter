@@ -6,15 +6,17 @@ import (
 
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/config"
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/iostreams"
+	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/kube"
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/pkg/cmd/util"
 	"github.com/spf13/cobra"
 )
 
 type LogsOptions struct {
 	util.Options
-	Service config.Service
-	Follow  bool
-	Tail    int64
+	Service  config.Service
+	Follow   bool
+	Outgoing bool
+	Tail     int64
 }
 
 func NewLogsOptions(streams iostreams.IOStreams) *LogsOptions {
@@ -42,6 +44,7 @@ func NewCmdLogs(f util.Factory, streams iostreams.IOStreams) *cobra.Command {
 		},
 	}
 	o.AddFlags(command.Flags())
+	command.Flags().BoolVar(&o.Outgoing, "outgoing", false, "Попытки api-gateway → Scooter.GetScooter, включая искусственные ошибки")
 	command.Flags().BoolVarP(&o.Follow, "follow", "f", false, "Follow logs until interrupted")
 	command.Flags().Int64Var(&o.Tail, "tail", 100, "Number of recent log lines")
 	return command
@@ -60,6 +63,9 @@ func (o *LogsOptions) Complete(f util.Factory, args []string) error {
 }
 
 func (o *LogsOptions) Validate() error {
+	if o.Outgoing && o.Service.Name != "api-gateway" {
+		return fmt.Errorf("--outgoing поддерживается для api-gateway")
+	}
 	if o.Tail < 0 {
 		return fmt.Errorf("--tail must not be negative")
 	}
@@ -76,6 +82,9 @@ func (o *LogsOptions) Run(ctx context.Context) error {
 		var cancel context.CancelFunc
 		ctx, cancel = o.Context(ctx)
 		defer cancel()
+	}
+	if o.Outgoing {
+		return runner.Logs(ctx, kube.EnvoyService(), o.Follow, o.Tail)
 	}
 	return runner.Logs(ctx, o.Service, o.Follow, o.Tail)
 }

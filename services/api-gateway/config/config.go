@@ -28,11 +28,12 @@ func Instance() *Config {
 }
 
 type Config struct {
-	RuntimeConfig rtconfig.Config   `yaml:"runtime_config"`
-	Targets       map[string]string `yaml:"service"`
-	GrpcServer    GrpcServer        `yaml:"grpc_server"`
-	HttpServer    HttpServer        `yaml:"http_server"`
-	Graceful      Graceful          `yaml:"graceful"`
+	RuntimeConfig   rtconfig.Config   `yaml:"runtime_config"`
+	Targets         map[string]string `yaml:"service"`
+	TargetOverrides map[string]string `yaml:"-" env:"SERVICE_TARGETS"`
+	GrpcServer      GrpcServer        `yaml:"grpc_server"`
+	HttpServer      HttpServer        `yaml:"http_server"`
+	Graceful        Graceful          `yaml:"graceful"`
 }
 
 // Read загружает конфигурацию из YAML и применяет переменные окружения.
@@ -45,6 +46,9 @@ func Read() (*Config, error) {
 	cfg := &Config{}
 	if err := cleanenv.ReadConfig(path, cfg); err != nil {
 		return nil, fmt.Errorf("read config %s: %w", path, err)
+	}
+	for name, address := range cfg.TargetOverrides {
+		cfg.Targets[name] = address
 	}
 	cfg.RuntimeConfig.ResolveSchemaPath(path)
 	if err := cfg.Validate(); err != nil {

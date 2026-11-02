@@ -168,3 +168,16 @@ BASE/PREMIUM/ULTRA из seed. Pricing загружает его в память 
 Readiness кеша и административные cordon/uncordon — задачи ученика.
 Команды homework в scooterctl разрешены прямой задачей автора для проверки ДЗ;
 они не вызываются автоматически из up/reset.
+
+## Инструменты домашнего задания модуля 3
+
+`fault` задаёт процент gRPC Unavailable или постоянную задержку для
+`api-gateway → scooter`, только GetScooter. Реализация использует стандартный
+Envoy fault filter, управляемый CLI; обработчики сервисов не эмулируют сбои.
+Прокси разворачивается через up/deploy. Gateway получает override только адреса
+Scooter; остальные зависимости и прямой вызов Rental → Scooter не меняются.
+Ctrl+C/окончание duration снимают сбой; после аварии CLI нужен --clear.
+`logs api-gateway --outgoing` показывает завершённые попытки на этой связи.
+`load` использует закреплённый Framer с локальным патчем deadline и phout;
+request-timeout передаётся также в grpc-timeout, автоматических retry нет.
+Ретраи, общий бюджет времени и retry budget приложения остаются задачей ученика.
