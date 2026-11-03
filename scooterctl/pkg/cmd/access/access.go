@@ -22,7 +22,10 @@ func NewCmdAccess(f util.Factory, streams iostreams.IOStreams) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(streams.Out, "HTTP: http://localhost:%d\nSwagger: http://localhost:%d/docs/\nKafka UI: http://localhost:18090\netcd: http://127.0.0.1:12379\n\n", c.Runtime.Ports.HTTP, c.Runtime.Ports.HTTP)
+			fmt.Fprintf(streams.Out,
+				"HTTP: http://localhost:%d\nSwagger: http://localhost:%d/docs/\ngRPC: 127.0.0.1:%d\nAdmin: http://localhost:%d/healthcheck/live\nKafka UI: http://localhost:18090\netcd: http://127.0.0.1:12379\n\n",
+				c.Runtime.Ports.HTTP, c.Runtime.Ports.HTTP, c.Runtime.Ports.GRPC, c.Runtime.Ports.Admin,
+			)
 			w := tabwriter.NewWriter(streams.Out, 0, 4, 2, ' ', 0)
 			fmt.Fprintln(w, "HOST\tPORT\tDATABASE\tUSER")
 			for _, dependency := range config.Dependencies() {
