@@ -72,7 +72,7 @@ grpcurl -plaintext -v -d '{}' \
 # Терминал 2: пользовательский поток; генератор сам не делает retry.
 ./bin/scooterctl load --addr 127.0.0.1:19090 \
   --method api_gateway.scooter.v1.ScooterService/GetScooter \
-  --data-file homeworks/module-3/get-scooter.json \
+  --data '{"scooter_id":"3499a1fb-030c-47a8-bcd2-0ce8304d6a22"}' \
   --rps 20 --duration 10m --request-timeout 3s
 
 # Терминал 3: каждая завершённая исходящая попытка, включая искусственный отказ.
