@@ -167,9 +167,9 @@ func RunRuntime(ctx context.Context, runtime Runtime, options Options, out io.Wr
 		return err
 	}
 	if options.Unavailable {
-		fmt.Fprintf(out, "ACTIVE %s → %s / GetScooter: %d%% попыток получают UNAVAILABLE до обработки сервисом; длительность %s\n", options.From, options.To, options.Percent, options.Duration)
+		fmt.Fprintf(out, "ACTIVE %s → %s / %s: %d%% попыток получают UNAVAILABLE до обработки сервисом; длительность %s\n", options.From, options.To, options.Method, options.Percent, options.Duration)
 	} else {
-		fmt.Fprintf(out, "ACTIVE %s → %s / GetScooter: %d%% попыток задерживаются на %s до обработки сервисом; длительность %s\n", options.From, options.To, options.Percent, options.Slowdown, options.Duration)
+		fmt.Fprintf(out, "ACTIVE %s → %s / %s: %d%% попыток задерживаются на %s до обработки сервисом; длительность %s\n", options.From, options.To, options.Method, options.Percent, options.Slowdown, options.Duration)
 	}
 	fmt.Fprintln(out, "Отправьте запрос из второго терминала. Ctrl+C досрочно снимает правило.")
 	timer := time.NewTimer(options.Duration)

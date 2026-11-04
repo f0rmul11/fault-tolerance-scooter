@@ -126,9 +126,65 @@
           "ProfileService"
         ]
       }
+    },
+    "/v1/profiles/{userId}/discount": {
+      "get": {
+        "summary": "Читает персональную скидку для личного кабинета.",
+        "operationId": "ProfileService_GetDiscount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api_gateway.profile.v1.GetDiscountResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "description": "UUID пользователя.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ProfileService"
+        ]
+      }
     }
   },
   "definitions": {
+    "api_gateway.profile.v1.GetDiscountResponse": {
+      "type": "object",
+      "properties": {
+        "discountPercent": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Скидка в процентах."
+        },
+        "completedTripsCount": {
+          "type": "string",
+          "format": "int64",
+          "description": "Число завершённых поездок; отсутствует, если история неизвестна."
+        },
+        "degraded": {
+          "type": "boolean",
+          "description": "Признак недоступности персонального расчёта."
+        },
+        "source": {
+          "type": "string",
+          "description": "Источник результата: pricing или fallback."
+        }
+      },
+      "description": "GetDiscountResponse: скидка для отображения, не для списания средств."
+    },
     "api_gateway.profile.v1.GetProfileResponse": {
       "type": "object",
       "properties": {

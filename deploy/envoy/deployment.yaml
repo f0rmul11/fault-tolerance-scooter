@@ -34,6 +34,7 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - {name: grpc, containerPort: 10001}
+            - {name: profile-pricing, containerPort: 10002}
           readinessProbe:
             tcpSocket: {port: grpc}
             periodSeconds: 2

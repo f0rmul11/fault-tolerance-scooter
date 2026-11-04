@@ -25,7 +25,7 @@ static_resources:
                     - name: destination
                       domains: ["*"]
                       routes:
-                        - match: {path: "/scooter.scooter.v1.ScooterService/GetScooter"}
+                        - match: {path: "{{.Method}}"}
                           route: {cluster: {{.To}}, timeout: 0s}
                           typed_per_filter_config:
                             envoy.filters.http.fault:
@@ -45,7 +45,7 @@ static_resources:
                   - name: envoy.access_loggers.stdout
                     filter:
                       header_filter:
-                        header: {name: ":path", string_match: {exact: "/scooter.scooter.v1.ScooterService/GetScooter"}}
+                        header: {name: ":path", string_match: {exact: "{{.Method}}"}}
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
                       log_format:

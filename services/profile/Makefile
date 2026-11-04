@@ -13,6 +13,7 @@ generate: proto-tools
 	$(PROTO_RUN) buf lint api
 	$(PROTO_RUN) buf build
 	$(PROTO_RUN) buf generate --template buf.gen.local.yaml
+	$(PROTO_RUN) buf generate --template buf.gen.external.yaml
 
 # Uses the same Buf templates with plugins already installed on PATH.
 generate-local:
@@ -20,3 +21,4 @@ generate-local:
 	buf lint api
 	buf build
 	buf generate --template buf.gen.local.yaml
+	buf generate --template buf.gen.external.yaml

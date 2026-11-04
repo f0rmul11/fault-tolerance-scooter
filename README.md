@@ -92,7 +92,7 @@ Generated protobuf и xo закоммичены вместе с источник
 При недоступном Buf Registry разрешён внешний кеш импортов:
 
 ```sh
-services/api-gateway/tools/prepare-proto-imports.sh /tmp/scooter-proto-imports
+sh services/api-gateway/tools/prepare-proto-imports.sh /tmp/scooter-proto-imports
 make -C services/api-gateway generate-offline PROTO_IMPORTS=/tmp/scooter-proto-imports
 ```
 

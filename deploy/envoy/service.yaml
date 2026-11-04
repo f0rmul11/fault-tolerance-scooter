@@ -7,3 +7,4 @@ spec:
     app.kubernetes.io/name: envoy
   ports:
     - {name: gateway-scooter, port: 10001, targetPort: 10001}
+    - {name: profile-pricing, port: 10002, targetPort: 10002}

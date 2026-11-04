@@ -55,6 +55,24 @@ func (w *ProfileServiceServiceDesc) RegisterHTTP(
 
 // Wrap all http methods with interceptor support
 
+func (w *ProfileServiceServiceDesc) GetDiscount(ctx context.Context, in *GetDiscountRequest) (*GetDiscountResponse, error) {
+	if w.opts.UnaryInterceptor == nil {
+		return w.svc.GetDiscount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     w,
+		FullMethod: "/api_gateway.profile.v1.ProfileService/GetDiscount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return w.svc.GetDiscount(ctx, req.(*GetDiscountRequest))
+	}
+	resp, err := w.opts.UnaryInterceptor(ctx, in, info, handler)
+	if err != nil || resp == nil {
+		return nil, err
+	}
+	return resp.(*GetDiscountResponse), err
+}
+
 func (w *ProfileServiceServiceDesc) GetProfile(ctx context.Context, in *GetProfileRequest) (*GetProfileResponse, error) {
 	if w.opts.UnaryInterceptor == nil {
 		return w.svc.GetProfile(ctx, in)

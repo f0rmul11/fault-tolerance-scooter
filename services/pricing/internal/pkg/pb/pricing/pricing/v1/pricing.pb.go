@@ -7,12 +7,11 @@
 package pricingV1
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -494,6 +493,98 @@ func (x *ListTariffsResponse) GetTariffs() []*Tariff {
 	return nil
 }
 
+// GetCompletedTripsCountRequest: параметры выборки истории.
+type GetCompletedTripsCountRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UUID пользователя.
+	UserId        string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCompletedTripsCountRequest) Reset() {
+	*x = GetCompletedTripsCountRequest{}
+	mi := &file_pricing_pricing_v1_pricing_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCompletedTripsCountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCompletedTripsCountRequest) ProtoMessage() {}
+
+func (x *GetCompletedTripsCountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pricing_pricing_v1_pricing_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCompletedTripsCountRequest.ProtoReflect.Descriptor instead.
+func (*GetCompletedTripsCountRequest) Descriptor() ([]byte, []int) {
+	return file_pricing_pricing_v1_pricing_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetCompletedTripsCountRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+// GetCompletedTripsCountResponse: завершённые поездки пользователя.
+type GetCompletedTripsCountResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Число поездок в состоянии COMPLETED.
+	Count         int64 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCompletedTripsCountResponse) Reset() {
+	*x = GetCompletedTripsCountResponse{}
+	mi := &file_pricing_pricing_v1_pricing_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCompletedTripsCountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCompletedTripsCountResponse) ProtoMessage() {}
+
+func (x *GetCompletedTripsCountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pricing_pricing_v1_pricing_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCompletedTripsCountResponse.ProtoReflect.Descriptor instead.
+func (*GetCompletedTripsCountResponse) Descriptor() ([]byte, []int) {
+	return file_pricing_pricing_v1_pricing_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetCompletedTripsCountResponse) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
 var File_pricing_pricing_v1_pricing_proto protoreflect.FileDescriptor
 
 const file_pricing_pricing_v1_pricing_proto_rawDesc = "" +
@@ -532,15 +623,20 @@ const file_pricing_pricing_v1_pricing_proto_rawDesc = "" +
 	"\x04trip\x18\x01 \x01(\v2\x18.pricing.pricing.v1.TripR\x04trip\"\x14\n" +
 	"\x12ListTariffsRequest\"K\n" +
 	"\x13ListTariffsResponse\x124\n" +
-	"\atariffs\x18\x01 \x03(\v2\x1a.pricing.pricing.v1.TariffR\atariffs*\x90\x01\n" +
+	"\atariffs\x18\x01 \x03(\v2\x1a.pricing.pricing.v1.TariffR\atariffs\"8\n" +
+	"\x1dGetCompletedTripsCountRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"6\n" +
+	"\x1eGetCompletedTripsCountResponse\x12\x14\n" +
+	"\x05count\x18\x01 \x01(\x03R\x05count*\x90\x01\n" +
 	"\n" +
 	"TripStatus\x12\x1b\n" +
 	"\x17TRIP_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14TRIP_STATUS_RESERVED\x10\x01\x12\x16\n" +
 	"\x12TRIP_STATUS_ACTIVE\x10\x02\x12\x19\n" +
 	"\x15TRIP_STATUS_COMPLETED\x10\x03\x12\x18\n" +
-	"\x14TRIP_STATUS_CANCELED\x10\x042\xc4\x01\n" +
-	"\x0ePricingService\x12R\n" +
+	"\x14TRIP_STATUS_CANCELED\x10\x042\xc5\x02\n" +
+	"\x0ePricingService\x12\x7f\n" +
+	"\x16GetCompletedTripsCount\x121.pricing.pricing.v1.GetCompletedTripsCountRequest\x1a2.pricing.pricing.v1.GetCompletedTripsCountResponse\x12R\n" +
 	"\aGetTrip\x12\".pricing.pricing.v1.GetTripRequest\x1a#.pricing.pricing.v1.GetTripResponse\x12^\n" +
 	"\vListTariffs\x12&.pricing.pricing.v1.ListTariffsRequest\x1a'.pricing.pricing.v1.ListTariffsResponseB6Z4pricing/internal/pkg/pb/pricing/pricing/v1;pricingV1b\x06proto3"
 
@@ -557,26 +653,30 @@ func file_pricing_pricing_v1_pricing_proto_rawDescGZIP() []byte {
 }
 
 var file_pricing_pricing_v1_pricing_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_pricing_pricing_v1_pricing_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_pricing_pricing_v1_pricing_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_pricing_pricing_v1_pricing_proto_goTypes = []any{
-	(TripStatus)(0),             // 0: pricing.pricing.v1.TripStatus
-	(*Trip)(nil),                // 1: pricing.pricing.v1.Trip
-	(*Tariff)(nil),              // 2: pricing.pricing.v1.Tariff
-	(*GetTripRequest)(nil),      // 3: pricing.pricing.v1.GetTripRequest
-	(*GetTripResponse)(nil),     // 4: pricing.pricing.v1.GetTripResponse
-	(*ListTariffsRequest)(nil),  // 5: pricing.pricing.v1.ListTariffsRequest
-	(*ListTariffsResponse)(nil), // 6: pricing.pricing.v1.ListTariffsResponse
+	(TripStatus)(0),                        // 0: pricing.pricing.v1.TripStatus
+	(*Trip)(nil),                           // 1: pricing.pricing.v1.Trip
+	(*Tariff)(nil),                         // 2: pricing.pricing.v1.Tariff
+	(*GetTripRequest)(nil),                 // 3: pricing.pricing.v1.GetTripRequest
+	(*GetTripResponse)(nil),                // 4: pricing.pricing.v1.GetTripResponse
+	(*ListTariffsRequest)(nil),             // 5: pricing.pricing.v1.ListTariffsRequest
+	(*ListTariffsResponse)(nil),            // 6: pricing.pricing.v1.ListTariffsResponse
+	(*GetCompletedTripsCountRequest)(nil),  // 7: pricing.pricing.v1.GetCompletedTripsCountRequest
+	(*GetCompletedTripsCountResponse)(nil), // 8: pricing.pricing.v1.GetCompletedTripsCountResponse
 }
 var file_pricing_pricing_v1_pricing_proto_depIdxs = []int32{
 	0, // 0: pricing.pricing.v1.Trip.status:type_name -> pricing.pricing.v1.TripStatus
 	1, // 1: pricing.pricing.v1.GetTripResponse.trip:type_name -> pricing.pricing.v1.Trip
 	2, // 2: pricing.pricing.v1.ListTariffsResponse.tariffs:type_name -> pricing.pricing.v1.Tariff
-	3, // 3: pricing.pricing.v1.PricingService.GetTrip:input_type -> pricing.pricing.v1.GetTripRequest
-	5, // 4: pricing.pricing.v1.PricingService.ListTariffs:input_type -> pricing.pricing.v1.ListTariffsRequest
-	4, // 5: pricing.pricing.v1.PricingService.GetTrip:output_type -> pricing.pricing.v1.GetTripResponse
-	6, // 6: pricing.pricing.v1.PricingService.ListTariffs:output_type -> pricing.pricing.v1.ListTariffsResponse
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
+	7, // 3: pricing.pricing.v1.PricingService.GetCompletedTripsCount:input_type -> pricing.pricing.v1.GetCompletedTripsCountRequest
+	3, // 4: pricing.pricing.v1.PricingService.GetTrip:input_type -> pricing.pricing.v1.GetTripRequest
+	5, // 5: pricing.pricing.v1.PricingService.ListTariffs:input_type -> pricing.pricing.v1.ListTariffsRequest
+	8, // 6: pricing.pricing.v1.PricingService.GetCompletedTripsCount:output_type -> pricing.pricing.v1.GetCompletedTripsCountResponse
+	4, // 7: pricing.pricing.v1.PricingService.GetTrip:output_type -> pricing.pricing.v1.GetTripResponse
+	6, // 8: pricing.pricing.v1.PricingService.ListTariffs:output_type -> pricing.pricing.v1.ListTariffsResponse
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -594,7 +694,7 @@ func file_pricing_pricing_v1_pricing_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pricing_pricing_v1_pricing_proto_rawDesc), len(file_pricing_pricing_v1_pricing_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

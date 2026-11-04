@@ -2,28 +2,38 @@ package fault
 
 import (
 	"fmt"
+	"path"
 	"time"
 )
 
 const (
-	ControlPort = 9901
-	MaxSlowdown = time.Minute
-	MaxDuration = time.Hour
-	GetScooter  = "/scooter.scooter.v1.ScooterService/GetScooter"
+	ControlPort            = 9901
+	MaxSlowdown            = time.Minute
+	MaxDuration            = time.Hour
+	GetScooter             = "/scooter.scooter.v1.ScooterService/GetScooter"
+	GetCompletedTripsCount = "/pricing.pricing.v1.PricingService/GetCompletedTripsCount"
 )
 
 type Edge struct {
-	From string
-	To   string
-	Port int
+	From   string
+	To     string
+	Port   int
+	Method string
 }
 
 func Edges() []Edge {
 	return []Edge{
 		{
-			From: "api-gateway",
-			To:   "scooter",
-			Port: 10001,
+			From:   "api-gateway",
+			To:     "scooter",
+			Port:   10001,
+			Method: GetScooter,
+		},
+		{
+			From:   "profile",
+			To:     "pricing",
+			Port:   10002,
+			Method: GetCompletedTripsCount,
 		},
 	}
 }
@@ -34,7 +44,7 @@ func FindEdge(from, to string) (Edge, error) {
 			return edge, nil
 		}
 	}
-	return Edge{}, fmt.Errorf("доступна RPC-связь api-gateway → scooter")
+	return Edge{}, fmt.Errorf("доступны RPC-связи api-gateway → scooter и profile → pricing")
 }
 
 type Options struct {
@@ -49,7 +59,8 @@ type Options struct {
 }
 
 func (o Options) Validate() error {
-	if _, err := FindEdge(o.From, o.To); err != nil {
+	edge, err := FindEdge(o.From, o.To)
+	if err != nil {
 		return err
 	}
 	if o.Clear {
@@ -58,8 +69,8 @@ func (o Options) Validate() error {
 		}
 		return nil
 	}
-	if o.Method != "GetScooter" && o.Method != GetScooter {
-		return fmt.Errorf("укажите --method GetScooter (или %s)", GetScooter)
+	if o.Method != path.Base(edge.Method) && o.Method != edge.Method {
+		return fmt.Errorf("укажите --method %s (или %s)", path.Base(edge.Method), edge.Method)
 	}
 	if o.Percent < 1 || o.Percent > 100 {
 		return fmt.Errorf("--percent должен быть от 1 до 100")

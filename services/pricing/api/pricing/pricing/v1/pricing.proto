@@ -6,6 +6,9 @@ option go_package = "pricing/internal/pkg/pb/pricing/pricing/v1;pricingV1";
 
 // API области pricing.
 service PricingService {
+  // Считает завершённые поездки в собственной БД.
+  rpc GetCompletedTripsCount(GetCompletedTripsCountRequest) returns (GetCompletedTripsCountResponse);
+
   // Читает асинхронный результат расчёта поездки.
   rpc GetTrip(GetTripRequest) returns (GetTripResponse);
 
@@ -106,4 +109,16 @@ message ListTariffsRequest {}
 message ListTariffsResponse {
   // Действующие тарифы; существующие снимки поездок не меняются.
   repeated Tariff tariffs = 1;
+}
+
+// GetCompletedTripsCountRequest: параметры выборки истории.
+message GetCompletedTripsCountRequest {
+  // UUID пользователя.
+  string user_id = 1;
+}
+
+// GetCompletedTripsCountResponse: завершённые поездки пользователя.
+message GetCompletedTripsCountResponse {
+  // Число поездок в состоянии COMPLETED.
+  int64 count = 1;
 }

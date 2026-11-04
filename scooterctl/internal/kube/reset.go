@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/config"
 	"github.com/f0rmul11/fault-tolerance-scooter/scooterctl/internal/project"
@@ -48,6 +49,11 @@ func ResetResources(root, name string) (*corev1.ConfigMap, *batchv1.Job, error) 
 			}
 			sql += string(seed)
 		}
+		seedMigrations, err := seedMigrationSQL(root, owner)
+		if err != nil {
+			return nil, nil, err
+		}
+		sql += seedMigrations
 		data[owner+".sql"] = sql
 		databases = append(databases, corev1.Container{
 			Name:    owner,
@@ -279,4 +285,31 @@ func (c *Client) CleanupReset(ctx context.Context, name string) error {
 		return nil
 	}
 	return err
+}
+
+// seedMigrationSQL replays data-only *_seed_*.sql migrations after truncation.
+// Goose history stays intact; only the Up section restores the initial data.
+func seedMigrationSQL(root, owner string) (string, error) {
+	paths, err := filepath.Glob(filepath.Join(root, "services", owner, "tools", "migrations", "*_seed_*.sql"))
+	if err != nil {
+		return "", err
+	}
+	var result strings.Builder
+	for _, path := range paths {
+		body, err := os.ReadFile(path)
+		if err != nil {
+			return "", err
+		}
+		_, up, found := strings.Cut(string(body), "-- +goose Up")
+		if !found {
+			return "", fmt.Errorf("seed migration %s has no Up section", path)
+		}
+		up, _, found = strings.Cut(up, "-- +goose Down")
+		if !found {
+			return "", fmt.Errorf("seed migration %s has no Down section", path)
+		}
+		result.WriteString(up)
+		result.WriteByte('\n')
+	}
+	return result.String(), nil
 }

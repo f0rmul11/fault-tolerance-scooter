@@ -24,6 +24,7 @@ import (
 	profileapp "profile/internal/app/profile/v1"
 	"profile/internal/application/service"
 	"profile/internal/application/usecase"
+	"profile/internal/infrastructure/gateway"
 	"profile/internal/infrastructure/storage"
 	"profile/internal/pkg/closer"
 	"profile/internal/pkg/connector/postgres"
@@ -236,11 +237,16 @@ func (a *App) initStorage(context.Context) error {
 }
 
 func (a *App) initUsecases(context.Context) error {
-	a.usecases = usecase.NewRegistry(a.storage, a.services)
+	a.usecases = usecase.NewRegistry(a.storage, a.services, a.gateways)
 	return nil
 }
 
 func (a *App) initServices(context.Context) error {
 	a.services = service.NewRegistry(a.storage)
+	return nil
+}
+
+func (a *App) initGateway(context.Context) error {
+	a.gateways = gateway.NewRegistry(a.grpcConn)
 	return nil
 }

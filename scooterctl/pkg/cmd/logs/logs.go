@@ -44,7 +44,7 @@ func NewCmdLogs(f util.Factory, streams iostreams.IOStreams) *cobra.Command {
 		},
 	}
 	o.AddFlags(command.Flags())
-	command.Flags().BoolVar(&o.Outgoing, "outgoing", false, "Попытки api-gateway → Scooter.GetScooter, включая искусственные ошибки")
+	command.Flags().BoolVar(&o.Outgoing, "outgoing", false, "Логи RPC-прокси; поле from определяет источник попытки, включая искусственные ошибки")
 	command.Flags().BoolVarP(&o.Follow, "follow", "f", false, "Follow logs until interrupted")
 	command.Flags().Int64Var(&o.Tail, "tail", 100, "Number of recent log lines")
 	return command
@@ -63,8 +63,8 @@ func (o *LogsOptions) Complete(f util.Factory, args []string) error {
 }
 
 func (o *LogsOptions) Validate() error {
-	if o.Outgoing && o.Service.Name != "api-gateway" {
-		return fmt.Errorf("--outgoing поддерживается для api-gateway")
+	if o.Outgoing && o.Service.Name != "api-gateway" && o.Service.Name != "profile" {
+		return fmt.Errorf("--outgoing поддерживается для api-gateway и profile")
 	}
 	if o.Tail < 0 {
 		return fmt.Errorf("--tail must not be negative")

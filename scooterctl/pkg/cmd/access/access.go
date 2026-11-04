@@ -27,6 +27,18 @@ func NewCmdAccess(f util.Factory, streams iostreams.IOStreams) *cobra.Command {
 				c.Runtime.Ports.HTTP, c.Runtime.Ports.HTTP, c.Runtime.Ports.GRPC, c.Runtime.Ports.Admin,
 			)
 			w := tabwriter.NewWriter(streams.Out, 0, 4, 2, ' ', 0)
+			fmt.Fprintln(w, "SERVICE\tGRPC\tADMIN")
+			for _, service := range c.Services {
+				if service.Name == "api-gateway" {
+					continue
+				}
+				fmt.Fprintf(w, "%s\t127.0.0.1:%d\thttp://localhost:%d\n", service.Name, service.GRPC.Host, service.Admin.Host)
+			}
+			if err := w.Flush(); err != nil {
+				return err
+			}
+			fmt.Fprintln(streams.Out)
+
 			fmt.Fprintln(w, "HOST\tPORT\tDATABASE\tUSER")
 			for _, dependency := range config.Dependencies() {
 				if dependency.Database != "" {

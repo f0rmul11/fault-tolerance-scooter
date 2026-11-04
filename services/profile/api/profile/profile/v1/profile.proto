@@ -6,6 +6,9 @@ option go_package = "profile/internal/pkg/pb/profile/profile/v1;profileV1";
 
 // API области profile.
 service ProfileService {
+  // Читает персональную скидку для личного кабинета.
+  rpc GetDiscount(GetDiscountRequest) returns (GetDiscountResponse);
+
   // Читает карточку по UUID.
   rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
 
@@ -98,4 +101,22 @@ message UpdateProfileRequest {
 message UpdateProfileResponse {
   // Карточка после сохранения.
   User profile = 1;
+}
+
+// GetDiscountRequest: запрос скидки для личного кабинета.
+message GetDiscountRequest {
+  // UUID пользователя.
+  string user_id = 1;
+}
+
+// GetDiscountResponse: скидка для отображения, не для списания средств.
+message GetDiscountResponse {
+  // Скидка в процентах.
+  int32 discount_percent = 1;
+  // Число завершённых поездок; отсутствует, если история неизвестна.
+  optional int64 completed_trips_count = 2;
+  // Признак недоступности персонального расчёта.
+  bool degraded = 3;
+  // Источник результата: pricing или fallback.
+  string source = 4;
 }

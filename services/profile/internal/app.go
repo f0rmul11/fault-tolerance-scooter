@@ -21,6 +21,7 @@ import (
 	"profile/config"
 	"profile/internal/application/service"
 	"profile/internal/application/usecase"
+	"profile/internal/infrastructure/gateway"
 	"profile/internal/infrastructure/storage"
 	"profile/internal/pkg/closer"
 	"profile/internal/pkg/healthcheck"
@@ -28,6 +29,7 @@ import (
 
 // App application
 type App struct {
+	gateways   *gateway.Registry
 	pool       *pgxpool.Pool
 	storage    *storage.Registry
 	services   *service.Registry
@@ -130,6 +132,7 @@ func (a *App) init(ctx context.Context) error {
 	initFuncs := []func(context.Context) error{
 		a.initMainServer,
 		a.initGrpcConn,
+		a.initGateway,
 		a.initPostgres,
 		a.initStorage,
 		a.initServices,

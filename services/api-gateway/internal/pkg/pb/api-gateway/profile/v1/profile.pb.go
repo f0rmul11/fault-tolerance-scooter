@@ -491,6 +491,125 @@ func (x *UpdateProfileResponse) GetProfile() *User {
 	return nil
 }
 
+// GetDiscountRequest: запрос скидки для личного кабинета.
+type GetDiscountRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UUID пользователя.
+	UserId        string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDiscountRequest) Reset() {
+	*x = GetDiscountRequest{}
+	mi := &file_api_gateway_profile_v1_profile_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDiscountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDiscountRequest) ProtoMessage() {}
+
+func (x *GetDiscountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_gateway_profile_v1_profile_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDiscountRequest.ProtoReflect.Descriptor instead.
+func (*GetDiscountRequest) Descriptor() ([]byte, []int) {
+	return file_api_gateway_profile_v1_profile_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetDiscountRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+// GetDiscountResponse: скидка для отображения, не для списания средств.
+type GetDiscountResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Скидка в процентах.
+	DiscountPercent int32 `protobuf:"varint,1,opt,name=discount_percent,json=discountPercent,proto3" json:"discount_percent,omitempty"`
+	// Число завершённых поездок; отсутствует, если история неизвестна.
+	CompletedTripsCount *int64 `protobuf:"varint,2,opt,name=completed_trips_count,json=completedTripsCount,proto3,oneof" json:"completed_trips_count,omitempty"`
+	// Признак недоступности персонального расчёта.
+	Degraded bool `protobuf:"varint,3,opt,name=degraded,proto3" json:"degraded,omitempty"`
+	// Источник результата: pricing или fallback.
+	Source        string `protobuf:"bytes,4,opt,name=source,proto3" json:"source,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDiscountResponse) Reset() {
+	*x = GetDiscountResponse{}
+	mi := &file_api_gateway_profile_v1_profile_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDiscountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDiscountResponse) ProtoMessage() {}
+
+func (x *GetDiscountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_gateway_profile_v1_profile_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDiscountResponse.ProtoReflect.Descriptor instead.
+func (*GetDiscountResponse) Descriptor() ([]byte, []int) {
+	return file_api_gateway_profile_v1_profile_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetDiscountResponse) GetDiscountPercent() int32 {
+	if x != nil {
+		return x.DiscountPercent
+	}
+	return 0
+}
+
+func (x *GetDiscountResponse) GetCompletedTripsCount() int64 {
+	if x != nil && x.CompletedTripsCount != nil {
+		return *x.CompletedTripsCount
+	}
+	return 0
+}
+
+func (x *GetDiscountResponse) GetDegraded() bool {
+	if x != nil {
+		return x.Degraded
+	}
+	return false
+}
+
+func (x *GetDiscountResponse) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
 var File_api_gateway_profile_v1_profile_proto protoreflect.FileDescriptor
 
 const file_api_gateway_profile_v1_profile_proto_rawDesc = "" +
@@ -523,13 +642,22 @@ const file_api_gateway_profile_v1_profile_proto_rawDesc = "" +
 	"\x06_emailB\a\n" +
 	"\x05_plan\"O\n" +
 	"\x15UpdateProfileResponse\x126\n" +
-	"\aprofile\x18\x01 \x01(\v2\x1c.api_gateway.profile.v1.UserR\aprofile*\x8d\x01\n" +
+	"\aprofile\x18\x01 \x01(\v2\x1c.api_gateway.profile.v1.UserR\aprofile\"-\n" +
+	"\x12GetDiscountRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\xc7\x01\n" +
+	"\x13GetDiscountResponse\x12)\n" +
+	"\x10discount_percent\x18\x01 \x01(\x05R\x0fdiscountPercent\x127\n" +
+	"\x15completed_trips_count\x18\x02 \x01(\x03H\x00R\x13completedTripsCount\x88\x01\x01\x12\x1a\n" +
+	"\bdegraded\x18\x03 \x01(\bR\bdegraded\x12\x16\n" +
+	"\x06source\x18\x04 \x01(\tR\x06sourceB\x18\n" +
+	"\x16_completed_trips_count*\x8d\x01\n" +
 	"\x10SubscriptionPlan\x12!\n" +
 	"\x1dSUBSCRIPTION_PLAN_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16SUBSCRIPTION_PLAN_BASE\x10\x01\x12\x1d\n" +
 	"\x19SUBSCRIPTION_PLAN_PREMIUM\x10\x02\x12\x1b\n" +
-	"\x17SUBSCRIPTION_PLAN_ULTRA\x10\x032\xa9\x03\n" +
-	"\x0eProfileService\x12\x83\x01\n" +
+	"\x17SUBSCRIPTION_PLAN_ULTRA\x10\x032\xbb\x04\n" +
+	"\x0eProfileService\x12\x8f\x01\n" +
+	"\vGetDiscount\x12*.api_gateway.profile.v1.GetDiscountRequest\x1a+.api_gateway.profile.v1.GetDiscountResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/profiles/{user_id}/discount\x12\x83\x01\n" +
 	"\n" +
 	"GetProfile\x12).api_gateway.profile.v1.GetProfileRequest\x1a*.api_gateway.profile.v1.GetProfileResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/profiles/{user_id}\x12\x7f\n" +
 	"\fListProfiles\x12+.api_gateway.profile.v1.ListProfilesRequest\x1a,.api_gateway.profile.v1.ListProfilesResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/profiles\x12\x8f\x01\n" +
@@ -548,7 +676,7 @@ func file_api_gateway_profile_v1_profile_proto_rawDescGZIP() []byte {
 }
 
 var file_api_gateway_profile_v1_profile_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_api_gateway_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_api_gateway_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_api_gateway_profile_v1_profile_proto_goTypes = []any{
 	(SubscriptionPlan)(0),         // 0: api_gateway.profile.v1.SubscriptionPlan
 	(*User)(nil),                  // 1: api_gateway.profile.v1.User
@@ -558,6 +686,8 @@ var file_api_gateway_profile_v1_profile_proto_goTypes = []any{
 	(*ListProfilesResponse)(nil),  // 5: api_gateway.profile.v1.ListProfilesResponse
 	(*UpdateProfileRequest)(nil),  // 6: api_gateway.profile.v1.UpdateProfileRequest
 	(*UpdateProfileResponse)(nil), // 7: api_gateway.profile.v1.UpdateProfileResponse
+	(*GetDiscountRequest)(nil),    // 8: api_gateway.profile.v1.GetDiscountRequest
+	(*GetDiscountResponse)(nil),   // 9: api_gateway.profile.v1.GetDiscountResponse
 }
 var file_api_gateway_profile_v1_profile_proto_depIdxs = []int32{
 	0, // 0: api_gateway.profile.v1.User.plan:type_name -> api_gateway.profile.v1.SubscriptionPlan
@@ -565,14 +695,16 @@ var file_api_gateway_profile_v1_profile_proto_depIdxs = []int32{
 	1, // 2: api_gateway.profile.v1.ListProfilesResponse.profiles:type_name -> api_gateway.profile.v1.User
 	0, // 3: api_gateway.profile.v1.UpdateProfileRequest.plan:type_name -> api_gateway.profile.v1.SubscriptionPlan
 	1, // 4: api_gateway.profile.v1.UpdateProfileResponse.profile:type_name -> api_gateway.profile.v1.User
-	2, // 5: api_gateway.profile.v1.ProfileService.GetProfile:input_type -> api_gateway.profile.v1.GetProfileRequest
-	4, // 6: api_gateway.profile.v1.ProfileService.ListProfiles:input_type -> api_gateway.profile.v1.ListProfilesRequest
-	6, // 7: api_gateway.profile.v1.ProfileService.UpdateProfile:input_type -> api_gateway.profile.v1.UpdateProfileRequest
-	3, // 8: api_gateway.profile.v1.ProfileService.GetProfile:output_type -> api_gateway.profile.v1.GetProfileResponse
-	5, // 9: api_gateway.profile.v1.ProfileService.ListProfiles:output_type -> api_gateway.profile.v1.ListProfilesResponse
-	7, // 10: api_gateway.profile.v1.ProfileService.UpdateProfile:output_type -> api_gateway.profile.v1.UpdateProfileResponse
-	8, // [8:11] is the sub-list for method output_type
-	5, // [5:8] is the sub-list for method input_type
+	8, // 5: api_gateway.profile.v1.ProfileService.GetDiscount:input_type -> api_gateway.profile.v1.GetDiscountRequest
+	2, // 6: api_gateway.profile.v1.ProfileService.GetProfile:input_type -> api_gateway.profile.v1.GetProfileRequest
+	4, // 7: api_gateway.profile.v1.ProfileService.ListProfiles:input_type -> api_gateway.profile.v1.ListProfilesRequest
+	6, // 8: api_gateway.profile.v1.ProfileService.UpdateProfile:input_type -> api_gateway.profile.v1.UpdateProfileRequest
+	9, // 9: api_gateway.profile.v1.ProfileService.GetDiscount:output_type -> api_gateway.profile.v1.GetDiscountResponse
+	3, // 10: api_gateway.profile.v1.ProfileService.GetProfile:output_type -> api_gateway.profile.v1.GetProfileResponse
+	5, // 11: api_gateway.profile.v1.ProfileService.ListProfiles:output_type -> api_gateway.profile.v1.ListProfilesResponse
+	7, // 12: api_gateway.profile.v1.ProfileService.UpdateProfile:output_type -> api_gateway.profile.v1.UpdateProfileResponse
+	9, // [9:13] is the sub-list for method output_type
+	5, // [5:9] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name
 	5, // [5:5] is the sub-list for extension extendee
 	0, // [0:5] is the sub-list for field type_name
@@ -584,13 +716,14 @@ func file_api_gateway_profile_v1_profile_proto_init() {
 		return
 	}
 	file_api_gateway_profile_v1_profile_proto_msgTypes[5].OneofWrappers = []any{}
+	file_api_gateway_profile_v1_profile_proto_msgTypes[8].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_gateway_profile_v1_profile_proto_rawDesc), len(file_api_gateway_profile_v1_profile_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

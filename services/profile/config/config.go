@@ -26,12 +26,13 @@ func Instance() *Config {
 }
 
 type Config struct {
-	Postgres    Postgres          `yaml:"postgres"`
-	PostgresDSN string            `yaml:"postgres_dsn" env:"POSTGRES_DSN"`
-	Targets     map[string]string `yaml:"service"`
-	GrpcServer  GrpcServer        `yaml:"grpc_server"`
-	HttpServer  HttpServer        `yaml:"http_server"`
-	Graceful    Graceful          `yaml:"graceful"`
+	TargetOverrides map[string]string `yaml:"-" env:"SERVICE_TARGETS"`
+	Postgres        Postgres          `yaml:"postgres"`
+	PostgresDSN     string            `yaml:"postgres_dsn" env:"POSTGRES_DSN"`
+	Targets         map[string]string `yaml:"service"`
+	GrpcServer      GrpcServer        `yaml:"grpc_server"`
+	HttpServer      HttpServer        `yaml:"http_server"`
+	Graceful        Graceful          `yaml:"graceful"`
 }
 
 // Read загружает конфигурацию из YAML и применяет переменные окружения.
@@ -44,6 +45,12 @@ func Read() (*Config, error) {
 	cfg := &Config{}
 	if err := cleanenv.ReadConfig(path, cfg); err != nil {
 		return nil, fmt.Errorf("read config %s: %w", path, err)
+	}
+	if cfg.Targets == nil {
+		cfg.Targets = make(map[string]string)
+	}
+	for name, address := range cfg.TargetOverrides {
+		cfg.Targets[name] = address
 	}
 	if err := cfg.Validate(); err != nil {
 		return nil, err

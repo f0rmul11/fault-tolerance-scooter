@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	ProfileService_GetDiscount_FullMethodName   = "/profile.profile.v1.ProfileService/GetDiscount"
 	ProfileService_GetProfile_FullMethodName    = "/profile.profile.v1.ProfileService/GetProfile"
 	ProfileService_ListProfiles_FullMethodName  = "/profile.profile.v1.ProfileService/ListProfiles"
 	ProfileService_UpdateProfile_FullMethodName = "/profile.profile.v1.ProfileService/UpdateProfile"
@@ -30,6 +31,8 @@ const (
 //
 // API области profile.
 type ProfileServiceClient interface {
+	// Читает персональную скидку для личного кабинета.
+	GetDiscount(ctx context.Context, in *GetDiscountRequest, opts ...grpc.CallOption) (*GetDiscountResponse, error)
 	// Читает карточку по UUID.
 	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileResponse, error)
 	// Читает страницу справочника.
@@ -44,6 +47,16 @@ type profileServiceClient struct {
 
 func NewProfileServiceClient(cc grpc.ClientConnInterface) ProfileServiceClient {
 	return &profileServiceClient{cc}
+}
+
+func (c *profileServiceClient) GetDiscount(ctx context.Context, in *GetDiscountRequest, opts ...grpc.CallOption) (*GetDiscountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDiscountResponse)
+	err := c.cc.Invoke(ctx, ProfileService_GetDiscount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *profileServiceClient) GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileResponse, error) {
@@ -82,6 +95,8 @@ func (c *profileServiceClient) UpdateProfile(ctx context.Context, in *UpdateProf
 //
 // API области profile.
 type ProfileServiceServer interface {
+	// Читает персональную скидку для личного кабинета.
+	GetDiscount(context.Context, *GetDiscountRequest) (*GetDiscountResponse, error)
 	// Читает карточку по UUID.
 	GetProfile(context.Context, *GetProfileRequest) (*GetProfileResponse, error)
 	// Читает страницу справочника.
@@ -98,6 +113,9 @@ type ProfileServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedProfileServiceServer struct{}
 
+func (UnimplementedProfileServiceServer) GetDiscount(context.Context, *GetDiscountRequest) (*GetDiscountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDiscount not implemented")
+}
 func (UnimplementedProfileServiceServer) GetProfile(context.Context, *GetProfileRequest) (*GetProfileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProfile not implemented")
 }
@@ -126,6 +144,24 @@ func RegisterProfileServiceServer(s grpc.ServiceRegistrar, srv ProfileServiceSer
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&ProfileService_ServiceDesc, srv)
+}
+
+func _ProfileService_GetDiscount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDiscountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServiceServer).GetDiscount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProfileService_GetDiscount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServiceServer).GetDiscount(ctx, req.(*GetDiscountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _ProfileService_GetProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -189,6 +225,10 @@ var ProfileService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "profile.profile.v1.ProfileService",
 	HandlerType: (*ProfileServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetDiscount",
+			Handler:    _ProfileService_GetDiscount_Handler,
+		},
 		{
 			MethodName: "GetProfile",
 			Handler:    _ProfileService_GetProfile_Handler,

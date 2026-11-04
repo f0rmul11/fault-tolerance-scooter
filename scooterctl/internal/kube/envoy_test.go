@@ -34,13 +34,18 @@ func TestFaultOnlyMatchesGetScooter(t *testing.T) {
 		}
 	}
 	listeners := bootstrap["static_resources"].(map[string]any)["listeners"].([]any)
-	hcm := listeners[0].(map[string]any)["filter_chains"].([]any)[0].(map[string]any)["filters"].([]any)[0].(map[string]any)["typed_config"].(map[string]any)
-	routes := hcm["route_config"].(map[string]any)["virtual_hosts"].([]any)[0].(map[string]any)["routes"].([]any)
-	first, rest := routes[0].(map[string]any), routes[1].(map[string]any)
-	if len(routes) != 2 || first["match"].(map[string]any)["path"] != fault.GetScooter || first["typed_per_filter_config"] == nil || rest["typed_per_filter_config"] != nil {
-		t.Fatalf("fault route scope incorrect: %v", routes)
+	if len(listeners) != len(fault.Edges()) {
+		t.Fatal("missing fault listener")
 	}
-	for _, name := range []string{"api-gateway", "rental"} {
+	for index, listener := range listeners {
+		hcm := listener.(map[string]any)["filter_chains"].([]any)[0].(map[string]any)["filters"].([]any)[0].(map[string]any)["typed_config"].(map[string]any)
+		routes := hcm["route_config"].(map[string]any)["virtual_hosts"].([]any)[0].(map[string]any)["routes"].([]any)
+		first, rest := routes[0].(map[string]any), routes[1].(map[string]any)
+		if len(routes) != 2 || first["match"].(map[string]any)["path"] != fault.Edges()[index].Method || first["typed_per_filter_config"] == nil || rest["typed_per_filter_config"] != nil {
+			t.Fatalf("fault route scope incorrect: %v", routes)
+		}
+	}
+	for _, name := range []string{"api-gateway", "profile", "rental"} {
 		services, err := cfg.Select([]string{name})
 		if err != nil {
 			t.Fatal(err)
@@ -58,14 +63,15 @@ func TestFaultOnlyMatchesGetScooter(t *testing.T) {
 					entry := raw.(map[string]any)
 					if entry["name"] == "SERVICE_TARGETS" {
 						hasOverride = true
-						if entry["value"] != "scooter:envoy.scooterflow.svc.cluster.local:10001" {
+						expected := map[string]string{"api-gateway": "scooter:envoy.scooterflow.svc.cluster.local:10001", "profile": "pricing:envoy.scooterflow.svc.cluster.local:10002"}[name]
+						if entry["value"] != expected {
 							t.Fatalf("unexpected targets: %v", entry)
 						}
 					}
 				}
 			}
 		}
-		if hasOverride != (name == "api-gateway") {
+		if hasOverride != (name == "api-gateway" || name == "profile") {
 			t.Fatalf("unexpected override for %s", name)
 		}
 	}

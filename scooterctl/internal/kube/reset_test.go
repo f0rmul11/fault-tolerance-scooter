@@ -2,6 +2,7 @@ package kube
 
 import (
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -68,5 +69,28 @@ func TestResetJobResumesOrReplacesFailedAttempt(t *testing.T) {
 		if err := cluster.CleanupReset(t.Context(), name); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestResetReplaysSeedUpWithoutRollback(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "services", "profile", "tools", "migrations")
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	body := "-- +goose Up\ninsert into users values (1);\n-- +goose Down\ndelete from users;\n"
+	if err := os.WriteFile(filepath.Join(dir, "002_seed_users.sql"), []byte(body), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "001_create_users.sql"), []byte("create table users (id int);"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	sql, err := seedMigrationSQL(root, "profile")
+	if err != nil || !strings.Contains(sql, "insert into users") || strings.Contains(sql, "delete") || strings.Contains(sql, "create table") {
+		t.Fatalf("unsafe reset SQL: %q, err=%v", sql, err)
+	}
+	sql, err = seedMigrationSQL(root, "pricing")
+	if err != nil || sql != "" {
+		t.Fatalf("unexpected SQL for another owner: %q, err=%v", sql, err)
 	}
 }

@@ -9,7 +9,7 @@ Kafka, k3s в Docker, Buf, Goose, xo, ручной DI и Clean Architecture.
 | Сервис | Данные | Внешние зависимости |
 |---|---|---|
 | api-gateway | HTTP/gRPC proxy, request_id, transport metadata | Все четыре владельца |
-| profile | users и subscriptions, имя, email, BASE/PREMIUM/ULTRA | Свой PostgreSQL |
+| profile | users и subscriptions, имя, email, BASE/PREMIUM/ULTRA; скидка для отображения | Свой PostgreSQL, Pricing gRPC для истории поездок |
 | scooter | UUID, номер, марка, is_active, владелец-юрлицо, наезд в секундах | Свой PostgreSQL |
 | rental | Бронь, поездка, занятость пользователя/самоката, HTTP-ключ, outbox | Scooter gRPC, свой PostgreSQL, Kafka |
 | pricing | Тарифы в копейках, снимок тарифа поездки, аванс и итог, inbox | Profile gRPC, свой PostgreSQL, Kafka |
@@ -88,6 +88,27 @@ Seed цен: BASE 1000 коп/мин, аванс 5000 коп; PREMIUM 700 и 300
 Если finish не получен, charged остаётся advance; итог ещё неизвестен.
 Canceled из RESERVED имеет нулевую стоимость и не списывает аванс.
 Деньги только int64 копейки, без float. Расчёт проверяет переполнение.
+
+## Скидка для личного кабинета (модуль 4)
+
+Gateway предоставляет GET /v1/profiles/{user_id}/discount и GetDiscount по gRPC.
+Profile проверяет существование пользователя в своей БД, затем вызывает
+Pricing.GetCompletedTripsCount. Pricing считает только COMPLETED в своей БД,
+не вызывает Profile в этой операции. Обратная связь Pricing → Profile.GetProfile
+при обработке rental.reserved остаётся отдельным сценарием.
+
+Скидка: 0–9 поездок → 0%, 10–49 → 10%, от 50 → 20%. Ответ содержит
+discount_percent, optional completed_trips_count, degraded и source.
+В стартовом коде source=pricing, degraded=false; ошибки передаются наружу.
+Timeout-политика, CB, fallback и /metrics оставлены заданиями ученика.
+Допустимый degraded response: 0%, source=fallback, degraded=true, неизвестное
+число поездок отсутствует. Локальные ошибки Profile не маскируются.
+Ответ предназначен для отображения, не меняет расчёты/списания поездок.
+
+Учебные данные домашки добавляются миграциями seed_discount_users в Profile
+и seed_discount_trips в Pricing при обычном запуске стенда. Три учебных пользователя
+имеют 0/12/55 завершённых поездок; есть исключаемые незавершённые записи.
+Это историческая выборка для чтения, не синтез реальных аренд и Kafka-событий.
 
 ## Контракты и ошибки
 

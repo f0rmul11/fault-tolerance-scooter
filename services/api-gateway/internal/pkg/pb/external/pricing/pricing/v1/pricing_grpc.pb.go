@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PricingService_GetTrip_FullMethodName     = "/pricing.pricing.v1.PricingService/GetTrip"
-	PricingService_ListTariffs_FullMethodName = "/pricing.pricing.v1.PricingService/ListTariffs"
+	PricingService_GetCompletedTripsCount_FullMethodName = "/pricing.pricing.v1.PricingService/GetCompletedTripsCount"
+	PricingService_GetTrip_FullMethodName                = "/pricing.pricing.v1.PricingService/GetTrip"
+	PricingService_ListTariffs_FullMethodName            = "/pricing.pricing.v1.PricingService/ListTariffs"
 )
 
 // PricingServiceClient is the client API for PricingService service.
@@ -29,6 +30,8 @@ const (
 //
 // API области pricing.
 type PricingServiceClient interface {
+	// Считает завершённые поездки в собственной БД.
+	GetCompletedTripsCount(ctx context.Context, in *GetCompletedTripsCountRequest, opts ...grpc.CallOption) (*GetCompletedTripsCountResponse, error)
 	// Читает асинхронный результат расчёта поездки.
 	GetTrip(ctx context.Context, in *GetTripRequest, opts ...grpc.CallOption) (*GetTripResponse, error)
 	// Читает цены за минуту и суммы авансов.
@@ -41,6 +44,16 @@ type pricingServiceClient struct {
 
 func NewPricingServiceClient(cc grpc.ClientConnInterface) PricingServiceClient {
 	return &pricingServiceClient{cc}
+}
+
+func (c *pricingServiceClient) GetCompletedTripsCount(ctx context.Context, in *GetCompletedTripsCountRequest, opts ...grpc.CallOption) (*GetCompletedTripsCountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCompletedTripsCountResponse)
+	err := c.cc.Invoke(ctx, PricingService_GetCompletedTripsCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *pricingServiceClient) GetTrip(ctx context.Context, in *GetTripRequest, opts ...grpc.CallOption) (*GetTripResponse, error) {
@@ -69,6 +82,8 @@ func (c *pricingServiceClient) ListTariffs(ctx context.Context, in *ListTariffsR
 //
 // API области pricing.
 type PricingServiceServer interface {
+	// Считает завершённые поездки в собственной БД.
+	GetCompletedTripsCount(context.Context, *GetCompletedTripsCountRequest) (*GetCompletedTripsCountResponse, error)
 	// Читает асинхронный результат расчёта поездки.
 	GetTrip(context.Context, *GetTripRequest) (*GetTripResponse, error)
 	// Читает цены за минуту и суммы авансов.
@@ -83,6 +98,9 @@ type PricingServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPricingServiceServer struct{}
 
+func (UnimplementedPricingServiceServer) GetCompletedTripsCount(context.Context, *GetCompletedTripsCountRequest) (*GetCompletedTripsCountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCompletedTripsCount not implemented")
+}
 func (UnimplementedPricingServiceServer) GetTrip(context.Context, *GetTripRequest) (*GetTripResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTrip not implemented")
 }
@@ -108,6 +126,24 @@ func RegisterPricingServiceServer(s grpc.ServiceRegistrar, srv PricingServiceSer
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&PricingService_ServiceDesc, srv)
+}
+
+func _PricingService_GetCompletedTripsCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCompletedTripsCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PricingServiceServer).GetCompletedTripsCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PricingService_GetCompletedTripsCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PricingServiceServer).GetCompletedTripsCount(ctx, req.(*GetCompletedTripsCountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _PricingService_GetTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -153,6 +189,10 @@ var PricingService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "pricing.pricing.v1.PricingService",
 	HandlerType: (*PricingServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetCompletedTripsCount",
+			Handler:    _PricingService_GetCompletedTripsCount_Handler,
+		},
 		{
 			MethodName: "GetTrip",
 			Handler:    _PricingService_GetTrip_Handler,

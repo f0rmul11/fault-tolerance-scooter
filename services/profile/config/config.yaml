@@ -12,7 +12,8 @@ http_server:
   port: 8080
   admin_port: 8081
 
-service: {}
+service:
+  pricing: pricing:9090
 
 postgres_dsn: "postgres://profile:profile-local@profile-postgres:5432/profile?sslmode=disable"
 postgres:
