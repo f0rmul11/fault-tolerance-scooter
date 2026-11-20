@@ -18,6 +18,23 @@ service:
   rental: "rental:9090"
   pricing: "pricing:9090"
 
+retry:
+  __default__:
+    enabled: false
+    separate_retry_per_handler_enabled: true
+    max_attempts: 5
+    initial_backoff: 20ms
+    max_backoff: 250ms
+    backoff_multiplier: 2
+    retryable_codes: [Unavailable]
+    throttler:
+      throttling_enabled: true
+      throttle_max_tokens: 1000
+      throttle_token_ratio: 0.5
+  handlers:
+    - method: /scooter.scooter.v1.ScooterService/GetScooter
+      enabled: true
+
 
 # Для локального запуска через make config-etcd. В k3s endpoint задан в Deployment.
 runtime_config:

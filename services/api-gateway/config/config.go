@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	"api-gateway/internal/pkg/retry"
 	"api-gateway/internal/pkg/rtconfig"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -34,6 +35,7 @@ type Config struct {
 	GrpcServer      GrpcServer        `yaml:"grpc_server"`
 	HttpServer      HttpServer        `yaml:"http_server"`
 	Graceful        Graceful          `yaml:"graceful"`
+	Retry           retry.Config      `yaml:"retry"`
 }
 
 // Read загружает конфигурацию из YAML и применяет переменные окружения.

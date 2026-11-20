@@ -40,6 +40,7 @@ import (
 	externalRentalV1 "api-gateway/internal/pkg/pb/external/rental/rental/v1"
 	externalScooterV1 "api-gateway/internal/pkg/pb/external/scooter/scooter/v1"
 	"api-gateway/internal/pkg/requestid"
+	"api-gateway/internal/pkg/retry"
 	"api-gateway/internal/pkg/rtconfig/global"
 )
 
@@ -194,7 +195,11 @@ func (a *App) initGrpcConn(_ context.Context) error {
 
 		conn, err := grpc.NewClient(address,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithUnaryInterceptor(intercept.ProxyMetadata()),
+			grpc.WithDisableRetry(),
+			grpc.WithChainUnaryInterceptor(
+				intercept.ProxyMetadata(),
+				retry.NewRetry(config.Instance().Retry).UnaryClientInterceptor(),
+			),
 		)
 
 		if err != nil {
